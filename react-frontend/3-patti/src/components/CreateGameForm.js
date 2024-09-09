@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { red, teal, lime, blue, grey } from "@mui/material/colors";
 import {
@@ -20,6 +20,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
   // Theme
   const buttonColor = red[600];
   const [error, setError] = useState(false);
+  const [gameTypes, setGameTypes] = useState(["Hello"]);
   const [formData, setFormData] = useState({
     userName: "",
     entryAmount: 0,
@@ -69,6 +70,18 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
         alert("provide valid input");
       });
   };
+  useEffect(() => {
+    console.log(`UseEffect called for CreateFameForm.`);
+    axios
+      .get("http://localhost:4000/3patti/gameTypes")
+      .then((res) => {
+        console.log(res.data.gameTypes);
+        setGameTypes(res.data.gameTypes);
+      })
+      .catch((err) => {
+        console.log(`error during getGameTypes. ErrorCode: ${err}`);
+      });
+  }, []);
   return (
     <>
       <Card
@@ -164,19 +177,20 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
 
           <TextField
             select
-            defaultValue="normal"
+            defaultValue={gameTypes[0]}
             name="gameType"
             value={formData.gameType}
             onChange={handleChange}
             label="GameType"
             type="text"
           >
-            <MenuItem key="normal" value="normal">
-              Normal
-            </MenuItem>
-            <MenuItem key="muflis" value="muflis">
-              Muflis
-            </MenuItem>
+            {gameTypes.map((game, index) => {
+              return (
+                <MenuItem key={index} value={game}>
+                  {game}
+                </MenuItem>
+              );
+            })}
           </TextField>
 
           <Button

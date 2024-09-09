@@ -1,8 +1,10 @@
 const express = require("express");
 const connectDB = require("./db/connect");
+// const enums = require("../3-patti/enums");
 const createGameRoute = require("./routes/createGameRoute");
 const testingRoute = require("./routes/testingRoute");
 const cors = require("cors");
+const { gameType } = require("./3-patti/enums");
 require("dotenv").config();
 
 const app = express();
@@ -79,6 +81,14 @@ socketIO.on("connection", (socket) => {
 
 app.use("/creategame", createGameRoute);
 app.use("/testing", testingRoute);
+
+app.get("/3patti/gameTypes", (req, res) => {
+  try {
+    res.status(200).json({ gameTypes: Object.keys(gameType) });
+  } catch (e) {
+    console.log(`Error while sending GameTypes. Error: ${e}`);
+  }
+});
 
 const start = async () => {
   try {

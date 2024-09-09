@@ -12,5 +12,4 @@ const gameType = {
   MUFLIS: "muflis",
 };
 
-// adding comment
 module.exports = { heirarchy, gameType };
