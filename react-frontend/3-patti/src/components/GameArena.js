@@ -20,9 +20,14 @@ import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import SeatComponent from "./SeatComponent";
 import ChatIcon from "@mui/icons-material/Chat";
 import SharedChatComponent from "./SharedChatComponent";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import UserNameForm from "./UserNameForm";
+import axios from "axios";
 
 export default function GameArena({ socket }) {
+  const navigate = useNavigate();
+  const numberOfPlayers = 8;
+  const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
   const { roomId } = useParams();
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
@@ -30,9 +35,94 @@ export default function GameArena({ socket }) {
   const navBarColor = green[900];
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
+  const [gameData, setGameData] = React.useState({
+    entryAmount: 0,
+    bootAmount: 0,
+    maxBet: 0,
+    gameType: "",
+    startAmount: 0,
+  });
+  const [playerData, setPlayerData] = React.useState(() => {
+    return Array.from({ length: numberOfPlayers }, (_, i) => ({
+      isOccupied: false,
+      numberOfReJoins: 0,
+      numberOfWins: 0,
+      balance: 0,
+      currentBet: 0,
+      userName: "",
+    }));
+  });
+  const players = Array.from({ length: numberOfPlayers }, (_, i) => (
+    <SeatComponent
+      numberOfReJoins={playerData[i].numberOfReJoins}
+      numberOfWins={playerData[i].numberOfWins}
+      currentBet={playerData[i].currentBet}
+      userName={playerData[i].userName}
+      currentBalance={playerData[i].balance}
+    ></SeatComponent>
+  ));
+
+  // Set UserName
+  const setUserNameModal = () => {
+    function handleChange(userName) {
+      localStorage.setItem("userName", userName);
+      setOpenUserNameModal(false);
+    }
+    return (
+      <Modal
+        open={openUserNameModal}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <>
+          <UserNameForm
+            socket={socket}
+            sendChangeToParent={handleChange}
+          ></UserNameForm>
+        </>
+      </Modal>
+    );
+  };
 
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
+    // Validate if room exists.
+    axios
+      .get(`http://localhost:4000/3patti/isValidGame`, {
+        params: { roomId: roomId },
+      })
+      .then((res) => {
+        console.log(res.data.isValidRoom);
+        if (!res.data.isValidRoom) {
+          navigate("/invalidRoom");
+          return;
+        }
+        console.log(`Room ${roomId} exists!`);
+      })
+      .catch((err) => {
+        console.log(
+          `error during fetching valid gameStatus. ErrorCode: ${err}`
+        );
+      });
+    console.log(playerData);
+    const userName = localStorage.getItem("userName");
+    // Set UserName
+    if (userName) {
+      console.log(`UserName: ${userName}`);
+    } else {
+      setOpenUserNameModal(true);
+    }
+    if (!localStorage.getItem("numberOfRejoins"))
+      localStorage.setItem("numberOfRejoins", 0);
+    if (!localStorage.getItem("numberOfVitories"))
+      localStorage.setItem("numberOfVitories", 0);
+
+    console.log(`socketId: ${socket.id}`);
+
+    // Window size updates
     const mediaQuery = window.matchMedia("(min-width: 1200px)");
     console.log(`media query: ${mediaQuery.matches}`);
     setShowChat(mediaQuery.matches);
@@ -167,13 +257,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[0]}
                 </Box>
                 <Box
                   sx={{
@@ -181,13 +265,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[1]}
                 </Box>
                 <Box
                   sx={{
@@ -195,13 +273,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[2]}
                 </Box>
               </Stack>
               <Stack
@@ -217,13 +289,7 @@ export default function GameArena({ socket }) {
                     width: "20%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[3]}
                 </Box>
                 <Box
                   sx={{
@@ -231,13 +297,7 @@ export default function GameArena({ socket }) {
                     width: "20%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[4]}
                 </Box>
               </Stack>
               <Stack
@@ -250,13 +310,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[5]}
                 </Box>
                 <Box
                   sx={{
@@ -264,13 +318,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[6]}
                 </Box>
                 <Box
                   sx={{
@@ -278,13 +326,7 @@ export default function GameArena({ socket }) {
                     width: "25%",
                   }}
                 >
-                  <SeatComponent
-                    numberOfReJoins={1}
-                    numberOfWins={2}
-                    currentBet={40}
-                    userName={"kunj"}
-                    currentBalance={500}
-                  ></SeatComponent>
+                  {players[7]}
                 </Box>
               </Stack>
             </Stack>
@@ -300,6 +342,7 @@ export default function GameArena({ socket }) {
       </Stack>
       {appDrawer()}
       {chatAppDrawer()}
+      {setUserNameModal()}
     </>
   );
 }

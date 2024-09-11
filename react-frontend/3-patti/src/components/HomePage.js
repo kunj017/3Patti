@@ -61,10 +61,10 @@ export default function HomePage({ socket }) {
 
   // Create Game Modal
   const createGameModal = () => {
-    function onCreateGame(gameId) {
+    function onCreateGame(roomId) {
       setOpenCreateGameModal(false);
-      setCurrentGameId(gameId);
-      navigate(`/gameArena/${gameId}`);
+      setCurrentGameId(roomId);
+      navigate(`/gameArena/${roomId}`);
       // setOpenGameInfoModal(true);
     }
     return (
@@ -91,6 +91,9 @@ export default function HomePage({ socket }) {
 
   // Join Game Code
   const joinGameModal = () => {
+    function handleChange(roomId) {
+      navigate(`/gameArena/${roomId}`);
+    }
     return (
       <Modal
         open={openJoinGameModal}
@@ -104,7 +107,10 @@ export default function HomePage({ socket }) {
         }}
       >
         <>
-          <JoinGameForm socket={socket}></JoinGameForm>
+          <JoinGameForm
+            socket={socket}
+            sendChangeToParent={handleChange}
+          ></JoinGameForm>
         </>
       </Modal>
     );

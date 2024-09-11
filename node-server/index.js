@@ -6,6 +6,7 @@ const testingRoute = require("./routes/testingRoute");
 const cors = require("cors");
 const { gameType } = require("./3-patti/enums");
 const { createGame } = require("./controller/createGame");
+const game = require("./models/game");
 require("dotenv").config();
 
 const app = express();
@@ -85,10 +86,38 @@ socketIO.on("connection", (socket) => {
   });
 });
 
+// Function to check if data exists by ID
+async function fetchDataById(id) {
+  try {
+    // Check if a document with the given ID exists
+    const data = await game.findById(id);
+    if (data) {
+      console.log("Data found:", data);
+      return data; // Return the data if found
+    } else {
+      console.log("No data found with the given ID");
+      return null; // Return null if no data is found
+    }
+  } catch (error) {
+    console.error("Error fetching data by ID:", error);
+    throw error;
+  }
+}
 // Get Game Types
 app.get("/3patti/gameTypes", (req, res) => {
   try {
     res.status(200).json({ gameTypes: Object.values(gameType) });
+  } catch (e) {
+    console.log(`Error while sending GameTypes. Error: ${e}`);
+  }
+});
+
+app.get("/3patti/isValidGame", async (req, res) => {
+  try {
+    const data = await fetchDataById(req.query.roomId);
+    const isValidRoom = data != null;
+    console.log(`isValidRoom: ${isValidRoom} roomId: ${req.query.roomId}`);
+    res.status(200).json({ isValidRoom: isValidRoom });
   } catch (e) {
     console.log(`Error while sending GameTypes. Error: ${e}`);
   }

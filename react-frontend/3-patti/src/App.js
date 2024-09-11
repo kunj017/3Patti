@@ -13,6 +13,7 @@ import UiExperiment from "./components/UiExperiment";
 import GameArena from "./components/GameArena";
 import ChatComponent from "./components/ChatComponent";
 import SeatComponent from "./components/SeatComponent";
+import InvalidRoomIdComponent from "./components/InvalidRoomIdComponent";
 const socket = socketIO.connect("http://localhost:4000");
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
       <Route
         path="chat"
         element={<ChatComponent socket={socket}></ChatComponent>}
+      ></Route>
+      <Route
+        path="invalidRoom"
+        element={<InvalidRoomIdComponent></InvalidRoomIdComponent>}
       ></Route>
       <Route
         path="seat"

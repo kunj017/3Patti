@@ -13,7 +13,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import MessageComponent from "./MessageComponent";
 
-export default function ChatComponent({ socket, chatList, setChatList }) {
+export default function SharedChatComponent({ socket, chatList, setChatList }) {
   const [message, setMessage] = React.useState({ content: "" });
   function sendMessage() {
     setChatList((prevChatList) => [

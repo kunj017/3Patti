@@ -16,24 +16,16 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LinkIcon from "@mui/icons-material/Link";
 
-export default function CreateGameForm({ socket, sendChangeToParent }) {
-  const [formData, setFormData] = React.useState({
-    roomId: "",
-  });
+export default function UserNameForm({ sendChangeToParent }) {
+  const [userName, setUserName] = React.useState("");
   const buttonColor = red[600];
-  function handleChange(event) {
-    const { name, value } = event.target;
-    console.log("handleChangeCalled");
-    setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
-  }
   function handleSubmit() {
     console.log("submit called");
-    console.log(formData);
-    sendChangeToParent(formData.roomId);
+    console.log(userName);
+    sendChangeToParent(userName);
   }
-
   return (
-    <>  
+    <>
       <Card
         raised={true}
         sx={{
@@ -50,7 +42,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
               style={{ color: "white" }}
             ></AddCircleOutlineIcon>
           }
-          title="Join a new game"
+          title="Set your user name"
           disableTypography={false}
           titleTypographyProps={{ variant: "h6", color: "white" }}
           sx={{
@@ -62,9 +54,11 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
         <Stack direction="column" spacing={1.2} sx={{ mx: 1, my: 1.2 }}>
           <TextField
             required
-            name="roomId"
-            value={formData.userName}
-            onChange={handleChange}
+            name="userName"
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+            }}
             label="roomId"
             type="text"
             InputProps={{
@@ -81,7 +75,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
             onClick={handleSubmit}
             style={{ backgroundColor: buttonColor }}
           >
-            Click Me
+            Submit
           </Button>
         </Stack>
       </Card>

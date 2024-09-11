@@ -66,6 +66,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
           alert("provide valid input");
         } else {
           sendChangeToParent(room_id);
+          localStorage.setItem("userName", formData.userName);
         }
       })
       .catch((err) => {
