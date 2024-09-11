@@ -27,6 +27,12 @@ import axios from "axios";
 export default function GameArena({ socket }) {
   const navigate = useNavigate();
   const numberOfPlayers = 8;
+  const [currentPlayerData, setCurrentPlayerData] = React.useState({
+    userName: "",
+    numberOfReJoins: 0,
+    numberOfWins: 0,
+  });
+  const [userName, setUserName] = React.useState("");
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
   const { roomId } = useParams();
   const [chatList, setChatList] = React.useState([]);
@@ -40,7 +46,6 @@ export default function GameArena({ socket }) {
     bootAmount: 0,
     maxBet: 0,
     gameType: "",
-    startAmount: 0,
   });
   const [playerData, setPlayerData] = React.useState(() => {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
@@ -67,6 +72,7 @@ export default function GameArena({ socket }) {
     function handleChange(userName) {
       localStorage.setItem("userName", userName);
       setOpenUserNameModal(false);
+      setUserName(userName);
     }
     return (
       <Modal
@@ -98,29 +104,87 @@ export default function GameArena({ socket }) {
         console.log(res.data.isValidRoom);
         if (!res.data.isValidRoom) {
           navigate("/invalidRoom");
-          return;
+          return false;
         }
         console.log(`Room ${roomId} exists!`);
+        return true;
       })
       .catch((err) => {
         console.log(
           `error during fetching valid gameStatus. ErrorCode: ${err}`
         );
+        navigate("/invalidRoom");
+
+        return false;
       });
+
     console.log(playerData);
+    // validate local storage.
     const userName = localStorage.getItem("userName");
     // Set UserName
     if (userName) {
       console.log(`UserName: ${userName}`);
     } else {
       setOpenUserNameModal(true);
+      return;
     }
+
+    console.log(`After userName`);
     if (!localStorage.getItem("numberOfRejoins"))
       localStorage.setItem("numberOfRejoins", 0);
     if (!localStorage.getItem("numberOfVitories"))
       localStorage.setItem("numberOfVitories", 0);
 
+    const newPlayerData = {
+      roomId: roomId,
+      userName: localStorage.getItem("userName"),
+      numberOfReJoins: localStorage.getItem("numberOfRejoins"),
+      numberOfVitories: localStorage.getItem("numberOfVitories"),
+    };
+    socket.emit("joinRoom", newPlayerData);
     console.log(`socketId: ${socket.id}`);
+
+    // Handle data update from server.
+    const handleUpdateGameData = (data) => {
+      if (!data.success) {
+        console.log(`Error returned from server!`);
+        return;
+      }
+      console.log("Game data from Server:");
+      console.log(data);
+      setGameData((prevData) => ({
+        entryAmount: data.entryAmount,
+        bootAmount: data.bootAmount,
+        maxBet: data.maxBet,
+        gameType: data.gameType,
+      }));
+      // const playerData = data.playerData;
+      const playerDataCopy = [...playerData];
+      // console.log(data.playerData)
+      data.data.playerData.map((playerData, i) => {
+        const { numberOfReJoins, numberOfWins, balance, currentBet, userName } =
+          playerData;
+        let newPlayerData = {
+          numberOfReJoins,
+          numberOfWins,
+          balance,
+          currentBet,
+          userName,
+        };
+        newPlayerData.isOccupied = true;
+        // newPlayerData = {isOccupied = true,
+        //   numberOfReJoins: playerData.numberOfReJoins,
+        //   numberOfWins: playerData.numberOfWins,
+        //   balance: playerData.balance,
+        //   currentBet: playerData.balance,
+        //   userName: "",}
+        const seatNumber = playerData.seatNumber;
+        playerDataCopy[seatNumber] = newPlayerData;
+      });
+      setPlayerData((prevData) => playerDataCopy);
+      console.log(playerData);
+    };
+    socket.on("updateGameData", handleUpdateGameData);
 
     // Window size updates
     const mediaQuery = window.matchMedia("(min-width: 1200px)");
@@ -132,8 +196,11 @@ export default function GameArena({ socket }) {
     // Using modern event listener
     mediaQuery.addEventListener("change", handleMediaChange);
 
-    return () => mediaQuery.removeEventListener("change", handleMediaChange);
-  }, []);
+    return () => {
+      socket.off("updateGameData", handleUpdateGameData);
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, [userName]);
 
   function appDrawer() {
     const drawerList = (

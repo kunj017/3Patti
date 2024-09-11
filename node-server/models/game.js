@@ -22,7 +22,7 @@ const PlayerDataSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  numberOfRejoins: {
+  numberOfReJoins: {
     type: Number,
     default: 0,
   },
@@ -30,7 +30,12 @@ const PlayerDataSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Please provide a balance amount for user"],
   },
+  currentBet: {
+    type: Number,
+    default: 0,
+  },
 });
+const PlayerDataModel = mongoose.model("playerData", PlayerDataSchema);
 const GameSchema = new mongoose.Schema({
   _id: {
     type: String,
@@ -56,8 +61,17 @@ const GameSchema = new mongoose.Schema({
   },
   playerData: {
     type: [PlayerDataSchema],
+    default: [
+      {
+        userId: "testing",
+        seatNumber: Math.floor(Math.random() * 8),
+        userName: "Kunj",
+        balance: 100,
+      },
+    ],
   },
 });
 
 // hey theere
-module.exports = mongoose.model("3-patti-game", GameSchema);
+const GameModel = mongoose.model("3-patti-game", GameSchema);
+module.exports = { GameModel, PlayerDataModel };

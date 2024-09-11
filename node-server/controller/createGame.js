@@ -1,4 +1,4 @@
-const game = require("../models/game");
+const { GameModel, PlayerDataModel } = require("../models/game");
 const enums = require("../3-patti/enums");
 const gameTypes = enums.gameType;
 
@@ -12,7 +12,7 @@ const createGame = async (req, res) => {
       bootAmount: req.body.bootAmount,
       maxBet: req.body.maxBet,
     };
-    const task = await game.create(dbObject);
+    const task = await GameModel.create(dbObject);
     console.log(`task Body: ${task}`);
     return res.status(200).json({
       success: true,
@@ -20,7 +20,7 @@ const createGame = async (req, res) => {
       msg: "Created new game instance.",
     });
   } catch (err) {
-    console.log(`Error while createTask ${err}`);
+    console.log(`Error while createGame ${err}`);
     res.json({ success: "false", error: err });
   }
 };
