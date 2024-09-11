@@ -64,7 +64,8 @@ export default function HomePage({ socket }) {
     function onCreateGame(gameId) {
       setOpenCreateGameModal(false);
       setCurrentGameId(gameId);
-      setOpenGameInfoModal(true);
+      navigate(`/gameArena/${gameId}`);
+      // setOpenGameInfoModal(true);
     }
     return (
       <Modal

@@ -33,7 +33,7 @@ function App() {
         element={<UiExperiment></UiExperiment>}
       ></Route>
       <Route
-        path="gameArena"
+        path="gameArena/:roomId"
         element={<GameArena socket={socket}></GameArena>}
       ></Route>
       <Route

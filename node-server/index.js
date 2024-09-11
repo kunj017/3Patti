@@ -5,6 +5,7 @@ const createGameRoute = require("./routes/createGameRoute");
 const testingRoute = require("./routes/testingRoute");
 const cors = require("cors");
 const { gameType } = require("./3-patti/enums");
+const { createGame } = require("./controller/createGame");
 require("dotenv").config();
 
 const app = express();
@@ -37,6 +38,12 @@ socketIO.on("connection", (socket) => {
     console.log(`new message recieved: ${newMessage.message}`);
   });
 
+  socket.on("createNewGame", (gameData) => {
+    // add logic to create a new room id and add the current socket to the new room and make it leader ?
+    socket.broadcast.emit("newMessage", newMessage);
+    console.log(`new message recieved: ${newMessage.message}`);
+  });
+
   // Testing
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
@@ -65,7 +72,6 @@ socketIO.on("connection", (socket) => {
   });
 
   // lol
-
   socket.on("submit", async (data) => {
     console.log(`Submit called: ${JSON.stringify(data)}`);
     socketIO.emit("submitresponse", data);
@@ -79,16 +85,16 @@ socketIO.on("connection", (socket) => {
   });
 });
 
-app.use("/creategame", createGameRoute);
-app.use("/testing", testingRoute);
-
+// Get Game Types
 app.get("/3patti/gameTypes", (req, res) => {
   try {
-    res.status(200).json({ gameTypes: Object.keys(gameType) });
+    res.status(200).json({ gameTypes: Object.values(gameType) });
   } catch (e) {
     console.log(`Error while sending GameTypes. Error: ${e}`);
   }
 });
+
+app.post("/3patti/createGame", createGame);
 
 const start = async () => {
   try {

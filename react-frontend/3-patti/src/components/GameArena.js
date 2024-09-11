@@ -20,8 +20,10 @@ import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import SeatComponent from "./SeatComponent";
 import ChatIcon from "@mui/icons-material/Chat";
 import SharedChatComponent from "./SharedChatComponent";
+import { useParams } from "react-router-dom";
 
 export default function GameArena({ socket }) {
+  const { roomId } = useParams();
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
   const backgroundColor = lightGreen[800];
@@ -30,6 +32,7 @@ export default function GameArena({ socket }) {
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
 
   useEffect(() => {
+    console.log(`Room Id: ${roomId}`);
     const mediaQuery = window.matchMedia("(min-width: 1200px)");
     console.log(`media query: ${mediaQuery.matches}`);
     setShowChat(mediaQuery.matches);
@@ -298,7 +301,7 @@ export default function GameArena({ socket }) {
       {appDrawer()}
       {chatAppDrawer()}
     </>
-  );  
+  );
 }
 
 {

@@ -47,11 +47,14 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
     console.log("submit called");
     console.log(formData);
     const postData = {
+      entryAmount: formData.entryAmount,
+      bootAmount: formData.bootAmount,
+      maxBet: formData.maxBet,
       gameType: formData.gameType,
       startAmount: formData.entryAmount,
     };
     axios
-      .post("http://localhost:4000/creategame", postData)
+      .post("http://localhost:4000/3patti/creategame", postData)
       .then((res) => {
         const room_id = res.data.body._id;
         console.log(
