@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import {
   Box,
   AppBar,
@@ -27,6 +28,7 @@ import axios from "axios";
 export default function GameArena({ socket }) {
   const navigate = useNavigate();
   const numberOfPlayers = 8;
+  const [timer, setTimer] = React.useState(0);
   const [currentPlayerData, setCurrentPlayerData] = React.useState({
     userName: "",
     numberOfReJoins: 0,
@@ -130,19 +132,27 @@ export default function GameArena({ socket }) {
     }
 
     console.log(`After userName`);
-    if (!localStorage.getItem("numberOfRejoins"))
-      localStorage.setItem("numberOfRejoins", 0);
-    if (!localStorage.getItem("numberOfVitories"))
-      localStorage.setItem("numberOfVitories", 0);
+    if (!localStorage.getItem(roomId)) {
+      console.log(`Local storage does not exist for roomId: ${roomId}`);
+      localStorage.setItem(
+        roomId,
+        JSON.stringify({
+          numberOfReJoins: 0,
+          numberOfWins: 1,
+          userId: uuidv4(),
+        })
+      );
+    }
 
+    const roomDataInStorage = JSON.parse(localStorage.getItem(roomId));
     const newPlayerData = {
       roomId: roomId,
       userName: localStorage.getItem("userName"),
-      numberOfReJoins: localStorage.getItem("numberOfRejoins"),
-      numberOfVitories: localStorage.getItem("numberOfVitories"),
+      numberOfReJoins: roomDataInStorage.numberOfReJoins,
+      numberOfWins: roomDataInStorage.numberOfWins,
+      userId: roomDataInStorage.userId,
     };
     socket.emit("joinRoom", newPlayerData);
-    console.log(`socketId: ${socket.id}`);
 
     // Handle data update from server.
     const handleUpdateGameData = (data) => {
@@ -196,11 +206,22 @@ export default function GameArena({ socket }) {
     // Using modern event listener
     mediaQuery.addEventListener("change", handleMediaChange);
 
+    const onTimerUpdate = (time) => {
+      console.log(`Got TimeUpdate`);
+      setTimer(time);
+    };
+    socket.on("timeUpdate", onTimerUpdate);
+
     return () => {
       socket.off("updateGameData", handleUpdateGameData);
+      socket.off("timeUpdate", onTimerUpdate);
       mediaQuery.removeEventListener("change", handleMediaChange);
     };
   }, [userName]);
+
+  const onResetTimer = () => {
+    socket.emit("resetTimer", roomId);
+  };
 
   function appDrawer() {
     const drawerList = (
@@ -399,11 +420,24 @@ export default function GameArena({ socket }) {
             </Stack>
           </div>
           <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
-            <SharedChatComponent
-              socket={socket}
-              chatList={chatList}
-              setChatList={setChatList}
-            ></SharedChatComponent>
+            <Stack direction="column" sx={{ height: "100%" }}>
+              <SharedChatComponent
+                socket={socket}
+                chatList={chatList}
+                setChatList={setChatList}
+              ></SharedChatComponent>
+              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+                <div>{timer}</div>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    onResetTimer();
+                  }}
+                >
+                  Reset Timer
+                </Button>
+              </Stack>
+            </Stack>
           </div>
         </Stack>
       </Stack>

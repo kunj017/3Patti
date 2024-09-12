@@ -28,13 +28,15 @@ app.use(
   })
 );
 
+const roomTimers = {};
+
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
   socket.on("disconnecting", () => {
     console.log(`🔥: ${socket.id} A user disconnecting`);
     console.log(socket.rooms);
     Array.from(socket.rooms).forEach(async (roomId) => {
-      await removePlayer(socket.id, roomId);
+      await removePlayer(socket.userId, roomId);
     });
   });
 
@@ -43,6 +45,33 @@ socketIO.on("connection", (socket) => {
     console.log(`new message recieved: ${newMessage.message}`);
   });
 
+  const startTimer = (roomId) => {
+    const roomData = roomTimers[roomId];
+    console.log(roomData);
+    if (roomData && !roomData.interval) {
+      console.log(`Timer started for room: ${roomId}`);
+      roomData.interval = setInterval(() => {
+        if (roomData.timer > 0) {
+          roomData.timer--;
+          socketIO.to(roomId).emit("timeUpdate", roomData.timer); // Send the timer only to clients in the room
+        } else {
+          console.log(`Timer ended for room: ${roomId}`);
+          clearInterval(roomData.interval);
+          roomData.interval = null;
+        }
+      }, 1000);
+    }
+  };
+
+  const resetTimer = (roomId) => {
+    if (roomTimers[roomId]) {
+      clearInterval(roomTimers[roomId].interval);
+      roomTimers[roomId].interval = null;
+      roomTimers[roomId].timer = 60;
+    }
+    startTimer(roomId);
+  };
+
   const handleJoinRoom = async (newUserData) => {
     const response = { success: true };
     const roomId = newUserData.roomId;
@@ -50,19 +79,25 @@ socketIO.on("connection", (socket) => {
     if (!isValidRoom) {
       response.success = false;
     } else {
-      newUserData.userId = socket.id;
       const playerAdded = await addNewPlayer(newUserData, roomId);
-      // if (!playerAdded) {
-      //   response.success = false;
-      // }
     }
 
     if (response.success) {
       response.data = await getRoomData(roomId);
       socket.join(roomId);
+      if (!roomTimers[roomId]) {
+        roomTimers[roomId] = { timer: 60, interval: null };
+      }
+      socket.userId = newUserData.userId;
+      console.log(`RoomTimer for ${roomId}: ${roomTimers[roomId]}`);
+      startTimer(roomId);
     }
     socketIO.to(roomId).emit("updateGameData", response);
   };
+
+  socket.on("resetTimer", (roomId) => {
+    resetTimer(roomId);
+  });
 
   socket.on("joinRoom", handleJoinRoom);
 
