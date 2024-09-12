@@ -17,6 +17,8 @@ import {
 } from "@mui/material";
 import { green, teal, lightGreen } from "@mui/material/colors";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
+import PlayCircleIcon from "@mui/icons-material/PlayCircle";
+import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import TimerOffOutlinedIcon from "@mui/icons-material/TimerOffOutlined";
 import Grid from "@mui/material/Unstable_Grid2";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -224,8 +226,32 @@ export default function GameArena({ socket }) {
   };
 
   function appDrawer() {
+    function pauseGame() {
+      socket.emit("pauseGame", roomId);
+    }
+    function resumeGame() {
+      socket.emit("resumeGame", roomId);
+    }
     const drawerList = (
-      <Box sx={{ width: 250 }} onClick={() => setDrawerState(false)}>
+      <Stack
+        direction="column"
+        sx={{ width: 250 }}
+        onClick={() => setDrawerState(false)}
+      >
+        <IconButton
+          onClick={() => {
+            resumeGame();
+          }}
+        >
+          <PlayCircleIcon></PlayCircleIcon>
+        </IconButton>
+        <IconButton
+          onClick={() => {
+            pauseGame();
+          }}
+        >
+          <PauseCircleIcon></PauseCircleIcon>
+        </IconButton>
         <Typography>Hey</Typography>
         <Button
           variant="contained"
@@ -235,7 +261,7 @@ export default function GameArena({ socket }) {
         >
           Reset Timer
         </Button>
-      </Box>
+      </Stack>
     );
     return (
       <>
