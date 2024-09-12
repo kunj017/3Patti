@@ -27,6 +27,9 @@ import axios from "axios";
 
 export default function GameArena({ socket }) {
   const navigate = useNavigate();
+  const playerBoxHeight = "90%";
+  const playerBoxWidth = "20%";
+  const playerBoxCenterWidth = "20%";
   const numberOfPlayers = 8;
   const [timer, setTimer] = React.useState(0);
   const [currentPlayerData, setCurrentPlayerData] = React.useState({
@@ -341,24 +344,24 @@ export default function GameArena({ socket }) {
               >
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[0]}
                 </Box>
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[1]}
                 </Box>
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[2]}
@@ -373,16 +376,16 @@ export default function GameArena({ socket }) {
               >
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "20%",
+                    height: playerBoxHeight,
+                    width: playerBoxCenterWidth,
                   }}
                 >
                   {players[3]}
                 </Box>
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "20%",
+                    height: playerBoxHeight,
+                    width: playerBoxCenterWidth,
                   }}
                 >
                   {players[4]}
@@ -394,39 +397,36 @@ export default function GameArena({ socket }) {
               >
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[5]}
                 </Box>
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[6]}
                 </Box>
                 <Box
                   sx={{
-                    height: "100%",
-                    width: "25%",
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
                   }}
                 >
                   {players[7]}
                 </Box>
               </Stack>
-            </Stack>
-          </div>
-          <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
-            <Stack direction="column" sx={{ height: "100%" }}>
-              <SharedChatComponent
-                socket={socket}
-                chatList={chatList}
-                setChatList={setChatList}
-              ></SharedChatComponent>
-              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+              <Stack
+                direction="row"
+                sx={{
+                  justifyContent: "space-around",
+                  paddingX: 12,
+                }}
+              >
                 <div>{timer}</div>
                 <Button
                   variant="contained"
@@ -437,6 +437,15 @@ export default function GameArena({ socket }) {
                   Reset Timer
                 </Button>
               </Stack>
+            </Stack>
+          </div>
+          <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
+            <Stack direction="column" sx={{ height: "100%" }}>
+              <SharedChatComponent
+                socket={socket}
+                chatList={chatList}
+                setChatList={setChatList}
+              ></SharedChatComponent>
             </Stack>
           </div>
         </Stack>
