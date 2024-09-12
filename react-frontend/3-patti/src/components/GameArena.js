@@ -13,8 +13,11 @@ import {
   Toolbar,
   IconButton,
   Drawer,
+  Divider,
 } from "@mui/material";
 import { green, teal, lightGreen } from "@mui/material/colors";
+import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
+import TimerOffOutlinedIcon from "@mui/icons-material/TimerOffOutlined";
 import Grid from "@mui/material/Unstable_Grid2";
 import MenuIcon from "@mui/icons-material/Menu";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
@@ -24,6 +27,8 @@ import SharedChatComponent from "./SharedChatComponent";
 import { useNavigate, useParams } from "react-router-dom";
 import UserNameForm from "./UserNameForm";
 import axios from "axios";
+import CardComponent from "./CardComponent";
+import ControllerComponent from "./ControllerComponent";
 
 export default function GameArena({ socket }) {
   const navigate = useNavigate();
@@ -31,19 +36,14 @@ export default function GameArena({ socket }) {
   const playerBoxWidth = "20%";
   const playerBoxCenterWidth = "20%";
   const numberOfPlayers = 8;
+  const numberOfCards = 3;
   const [timer, setTimer] = React.useState(0);
-  const [currentPlayerData, setCurrentPlayerData] = React.useState({
-    userName: "",
-    numberOfReJoins: 0,
-    numberOfWins: 0,
-  });
   const [userName, setUserName] = React.useState("");
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
   const { roomId } = useParams();
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
-  const backgroundColor = lightGreen[800];
-  const navBarColor = green[900];
+  const navBarColor = green[800];
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
   const [gameData, setGameData] = React.useState({
@@ -70,6 +70,9 @@ export default function GameArena({ socket }) {
       userName={playerData[i].userName}
       currentBalance={playerData[i].balance}
     ></SeatComponent>
+  ));
+  const cards = Array.from({ length: numberOfCards }, (_, i) => (
+    <CardComponent rank={i + 2} suit="heart"></CardComponent>
   ));
 
   // Set UserName
@@ -185,12 +188,6 @@ export default function GameArena({ socket }) {
           userName,
         };
         newPlayerData.isOccupied = true;
-        // newPlayerData = {isOccupied = true,
-        //   numberOfReJoins: playerData.numberOfReJoins,
-        //   numberOfWins: playerData.numberOfWins,
-        //   balance: playerData.balance,
-        //   currentBet: playerData.balance,
-        //   userName: "",}
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
       });
@@ -230,6 +227,14 @@ export default function GameArena({ socket }) {
     const drawerList = (
       <Box sx={{ width: 250 }} onClick={() => setDrawerState(false)}>
         <Typography>Hey</Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            onResetTimer();
+          }}
+        >
+          Reset Timer
+        </Button>
       </Box>
     );
     return (
@@ -308,6 +313,7 @@ export default function GameArena({ socket }) {
                 3 Patti
               </Typography>
             </Stack>
+
             {!showChat && (
               <IconButton
                 size="large"
@@ -336,7 +342,7 @@ export default function GameArena({ socket }) {
           <div style={{ flexGrow: 1, position: "relative" }}>
             <Stack
               direction="column"
-              sx={{ justifyContent: "space-around", height: "100%" }}
+              sx={{ justifyContent: "space-between", height: "100%" }}
             >
               <Stack
                 direction="row"
@@ -420,22 +426,47 @@ export default function GameArena({ socket }) {
                   {players[7]}
                 </Box>
               </Stack>
+              {/* Controller */}
               <Stack
                 direction="row"
+                spacing={2}
                 sx={{
-                  justifyContent: "space-around",
-                  paddingX: 12,
+                  justifyContent: "space-between",
+                  paddingX: 2,
+                  alignItems: "center",
                 }}
               >
-                <div>{timer}</div>
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    onResetTimer();
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: "center",
+                    paddingX: 2,
+                    alignItems: "center",
                   }}
                 >
-                  Reset Timer
-                </Button>
+                  <Typography variant="h6">Cards: </Typography>
+                  {cards.map((card) => card)}
+                </Stack>
+                <ControllerComponent
+                  canShow={false}
+                  playerBalance={200}
+                  currentGameBet={30}
+                ></ControllerComponent>
+
+                <Stack direction="row" sx={{ alignItems: "center" }}>
+                  {timer > 0 ? (
+                    <TimerOutlinedIcon
+                      variant="contained"
+                      fontSize="large"
+                      sx={{
+                        color: timer > 10 ? "black" : "red",
+                      }}
+                    ></TimerOutlinedIcon>
+                  ) : (
+                    <TimerOffOutlinedIcon fontSize="large"></TimerOffOutlinedIcon>
+                  )}
+                  <div>{timer}</div>
+                </Stack>
               </Stack>
             </Stack>
           </div>

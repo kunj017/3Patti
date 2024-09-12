@@ -62,6 +62,14 @@ function EntryPage() {
       >
         Seat Component
       </button>
+
+      <button
+        onClick={() => {
+          navigate("/card");
+        }}
+      >
+        Card Component
+      </button>
     </>
   );
 }

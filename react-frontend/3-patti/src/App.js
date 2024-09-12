@@ -14,6 +14,7 @@ import GameArena from "./components/GameArena";
 import ChatComponent from "./components/ChatComponent";
 import SeatComponent from "./components/SeatComponent";
 import InvalidRoomIdComponent from "./components/InvalidRoomIdComponent";
+import CardComponent from "./components/CardComponent";
 const socket = socketIO.connect("http://localhost:4000");
 
 function App() {
@@ -44,6 +45,10 @@ function App() {
       <Route
         path="invalidRoom"
         element={<InvalidRoomIdComponent></InvalidRoomIdComponent>}
+      ></Route>
+      <Route
+        path="card"
+        element={<CardComponent rank="A" suit="heart"></CardComponent>}
       ></Route>
       <Route
         path="seat"

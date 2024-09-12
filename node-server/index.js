@@ -29,6 +29,7 @@ app.use(
 );
 
 const roomTimers = {};
+const timerLimit = 30; // seconds
 
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
@@ -67,7 +68,7 @@ socketIO.on("connection", (socket) => {
     if (roomTimers[roomId]) {
       clearInterval(roomTimers[roomId].interval);
       roomTimers[roomId].interval = null;
-      roomTimers[roomId].timer = 60;
+      roomTimers[roomId].timer = timerLimit;
     }
     startTimer(roomId);
   };
@@ -86,7 +87,7 @@ socketIO.on("connection", (socket) => {
       response.data = await getRoomData(roomId);
       socket.join(roomId);
       if (!roomTimers[roomId]) {
-        roomTimers[roomId] = { timer: 60, interval: null };
+        roomTimers[roomId] = { timer: timerLimit, interval: null };
       }
       socket.userId = newUserData.userId;
       console.log(`RoomTimer for ${roomId}: ${roomTimers[roomId]}`);
