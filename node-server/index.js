@@ -6,7 +6,8 @@ const testingRoute = require("./routes/testingRoute");
 const cors = require("cors");
 const { gameType } = require("./3-patti/enums");
 const { createGame } = require("./controller/createGame");
-const { GameModel, PlayerDataModel } = require("./models/game");
+const { GameModel, PlayerDataModel, CardDataModel } = require("./models/game");
+const { Socket } = require("socket.io");
 require("dotenv").config();
 
 const app = express();
@@ -30,15 +31,39 @@ app.use(
 
 const roomTimers = {};
 const timerLimit = 30; // seconds
+const numberOfCards = 52;
+const SUIT_MAP = { 0: "heart", 1: "diamond", 2: "spade", 3: "club" };
+const RANK_MAP = {
+  1: "A",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "9",
+  10: "10",
+  11: "J",
+  12: "Q",
+  13: "K",
+};
 
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
   socket.on("disconnecting", () => {
     console.log(`🔥: ${socket.id} A user disconnecting`);
     console.log(socket.rooms);
-    Array.from(socket.rooms).forEach(async (roomId) => {
-      await removePlayer(socket.userId, roomId);
-    });
+    Array.from(socket.rooms)
+      .filter((roomId) => roomId != socket.id)
+      .forEach(async (roomId) => {
+        await removePlayer(socket.userId, roomId);
+        const newGameData = await getRoomData(roomId);
+        console.log(`Removing player from roomId: ${roomId}`);
+        socketIO
+          .to(roomId)
+          .emit("updateGameData", { success: true, data: newGameData });
+      });
   });
 
   socket.on("newMessage", (newMessage) => {
@@ -48,9 +73,12 @@ socketIO.on("connection", (socket) => {
   });
 
   const startTimer = (roomId) => {
+    if (!roomTimers[roomId]) {
+      roomTimers[roomId] = { timer: timerLimit, interval: null };
+    }
     const roomData = roomTimers[roomId];
     console.log(roomData);
-    if (roomData && !roomData.interval) {
+    if (!roomData.interval) {
       console.log(`Timer started for room: ${roomId}`);
       roomData.interval = setInterval(() => {
         if (roomData.timer > 0) {
@@ -67,7 +95,9 @@ socketIO.on("connection", (socket) => {
 
   const resetTimer = (roomId) => {
     if (roomTimers[roomId]) {
-      clearInterval(roomTimers[roomId].interval);
+      if (roomTimers[roomId].interval) {
+        clearInterval(roomTimers[roomId].interval);
+      }
       roomTimers[roomId].interval = null;
       roomTimers[roomId].timer = timerLimit;
     }
@@ -75,6 +105,7 @@ socketIO.on("connection", (socket) => {
   };
 
   const handleJoinRoom = async (newUserData) => {
+    console.log("Join room called");
     const response = { success: true };
     const roomId = newUserData.roomId;
     const isValidRoom = await isValidRoomId(roomId);
@@ -87,19 +118,92 @@ socketIO.on("connection", (socket) => {
     if (response.success) {
       response.data = await getRoomData(roomId);
       socket.join(roomId);
-      if (!roomTimers[roomId]) {
-        roomTimers[roomId] = { timer: timerLimit, interval: null };
-      }
+
       socket.userId = newUserData.userId;
-      console.log(`RoomTimer for ${roomId}: ${roomTimers[roomId]}`);
-      startTimer(roomId);
     }
     socketIO.to(roomId).emit("updateGameData", response);
   };
 
-  socket.on("resetTimer", (roomId) => {
+  async function resetGameData(roomId) {
+    // Reset Pot, player cards, player bets
+    await GameModel.updateOne({ _id: roomId }, { $set: { potAmount: 0 } });
+    await GameModel.updateMany(
+      { _id: roomId },
+      { $set: { "playerData.$[].cards": [], "playerData.$[].currentBet": 0 } }
+    );
+  }
+  function createAndShuffleArray(n) {
+    // Create an array of size n
+    let arr = Array.from({ length: n }, (_, i) => i + 1);
+
+    // Fisher-Yates shuffle
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr;
+  }
+
+  async function createCardObject(value) {
+    let rank = RANK_MAP[(value % 13) + 1];
+    let suit = SUIT_MAP[value % 4];
+    const newCard = await CardDataModel.create({ rank: rank, suit: suit });
+    return newCard;
+  }
+  async function distributeCards(roomId, players) {
+    // Shuffle a new deck and assign cards to each player.
+    const deck = createAndShuffleArray(numberOfCards);
+    console.log("new deck: ");
+    console.log(deck);
+    const cards = [];
+    for (let i = 0; i < players.length; i++) {
+      cards.push(
+        await Promise.all(
+          deck.slice(3 * i, 3 * i + 3).map(async (value) => {
+            const cardObject = await createCardObject(value);
+            return cardObject;
+          })
+        )
+      );
+    }
+    console.log("New Generated cards: ");
+    console.log(cards);
+    await Promise.all(
+      players.map(async (playerData, i) => {
+        await GameModel.updateOne(
+          {
+            _id: roomId,
+            "playerData.userId": playerData.userId,
+          },
+          { $set: { "playerData.$.cards": cards[i] } }
+        );
+      })
+    );
+  }
+  const onStartGame = async (roomId) => {
+    console.log(`StartGame called for roomId: ${roomId}`);
     resetTimer(roomId);
-  });
+    await resetGameData(roomId);
+    const players = (await GameModel.findOne({ _id: roomId }).lean())
+      .playerData;
+    console.log("Players for currentGame: ");
+    console.log(players);
+    await distributeCards(roomId, players);
+    const updatedData = await GameModel.findById(roomId).lean();
+    console.log("updated game data: ");
+    console.log(updatedData);
+    socketIO
+      .to(roomId)
+      .emit("updateGameData", { success: true, data: updatedData });
+  };
+  const onPlayerAction = async (action) => {};
+  const onPauseGame = async (roomId) => {};
+
+  socket.on("startGame", onStartGame);
+  socket.on("pauseGame", onPauseGame);
+  socket.on("playerAction", onPlayerAction);
+  socket.on("resetTimer", resetTimer);
 
   socket.on("joinRoom", handleJoinRoom);
 
@@ -172,7 +276,6 @@ async function findSeatNumber(roomId) {
       (playerData) => playerData.seatNumber
     );
     seatsOccupied.sort();
-    console.log(`Seats Occupied for RoomId: ${roomId}: [${seatsOccupied}]`);
     let availableSeat = 8;
     for (let i = 0; i < 8; i++) {
       if (!seatsOccupied.includes(i)) {
@@ -180,6 +283,9 @@ async function findSeatNumber(roomId) {
         break;
       }
     }
+    console.log(
+      `Seats Occupied for RoomId: ${roomId}: [${seatsOccupied}. Available Seat: ${availableSeat}]`
+    );
     return availableSeat;
   } catch (err) {
     console.log(`Error while finding seatNumber: ${err}`);
@@ -213,7 +319,11 @@ async function removePlayer(playerId, roomId) {
 async function addNewPlayer(newPlayerData, roomId) {
   try {
     const seatNumber = await findSeatNumber(roomId);
-    if (await isPlayerAlreadyPresent(roomId, newPlayerData.userId)) {
+    const isDuplicatePlayer = await isPlayerAlreadyPresent(
+      roomId,
+      newPlayerData.userId
+    );
+    if (isDuplicatePlayer) {
       console.log(`Player is already Present!`);
       return true;
     } else if (seatNumber > 7) {

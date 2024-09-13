@@ -45,7 +45,9 @@ export default function GameArena({ socket }) {
   const numberOfCards = 3;
   const currentPot = 100;
   const [timer, setTimer] = React.useState(0);
-  const [userName, setUserName] = React.useState("");
+  const [userName, setUserName] = React.useState(
+    localStorage.getItem("userName")
+  );
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
@@ -67,7 +69,7 @@ export default function GameArena({ socket }) {
       balance: 0,
       currentBet: 0,
       userName: "",
-      currentCards: [],
+      cards: [],
     }));
   });
   const players = Array.from({ length: numberOfPlayers }, (_, i) => (
@@ -79,11 +81,9 @@ export default function GameArena({ socket }) {
       currentBalance={playerData[i].balance}
     ></SeatComponent>
   ));
-  const cards = Array.from({ length: playerData.length }, (_, i) =>
-    playerData[i].currentCards.map((cardData) => (
-      <CardComponent rank={cardData.rank} suit={cardData.suit}></CardComponent>
-    ))
-  );
+  const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
+    <CardComponent rank={cardData.rank} suit={cardData.suit}></CardComponent>
+  ));
 
   // Set UserName
   const setUserNameModal = () => {
@@ -114,6 +114,7 @@ export default function GameArena({ socket }) {
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
     // Validate if room exists.
+
     axios
       .get(`http://localhost:4000/3patti/isValidGame`, {
         params: { roomId: roomId },
@@ -138,14 +139,10 @@ export default function GameArena({ socket }) {
 
     console.log(playerData);
     console.log(cards);
-    // validate local storage.
-    const userName = localStorage.getItem("userName");
-    // Set UserName
-    if (userName) {
-      setUserName(userName);
-      console.log(`UserName: ${userName}`);
-    } else {
+
+    if (userName == null) {
       setOpenUserNameModal(true);
+      console.log(`UserName: ${userName}`);
       return;
     }
 
@@ -197,7 +194,7 @@ export default function GameArena({ socket }) {
           balance,
           currentBet,
           userName,
-          currentCards,
+          cards,
         } = playerData;
         let newPlayerData = {
           numberOfReJoins,
@@ -207,8 +204,8 @@ export default function GameArena({ socket }) {
           userName,
         };
         newPlayerData.isOccupied = true;
-        if (currentCards) newPlayerData.currentCards = currentCards;
-        else newPlayerData.currentCards = [];
+        if (cards) newPlayerData.cards = cards;
+        else newPlayerData.cards = [];
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
         // set currentPlayerSeat
@@ -217,7 +214,7 @@ export default function GameArena({ socket }) {
         console.log(`CurrentPlayer Seat: ${currentPlayerSeat}`);
       });
       setPlayerData((prevData) => playerDataCopy);
-      console.log(playerData);
+      console.log(playerDataCopy);
     };
     socket.on("updateGameData", handleUpdateGameData);
 
@@ -253,7 +250,7 @@ export default function GameArena({ socket }) {
       socket.emit("pauseGame", roomId);
     }
     function resumeGame() {
-      socket.emit("resumeGame", roomId);
+      socket.emit("startGame", roomId);
     }
     const drawerList = (
       <Stack

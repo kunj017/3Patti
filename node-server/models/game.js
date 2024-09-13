@@ -3,10 +3,25 @@ const mongoose = require("mongoose");
 const enums = require("../3-patti/enums");
 const gameTypes = enums.gameType;
 const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwxyz", 6);
+const CardDataSchema = new mongoose.Schema({
+  rank: {
+    type: String,
+    required: [true, "Please provide card rank"],
+    enum: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
+  },
+  suit: {
+    type: String,
+    enum: ["heart", "diamond", "spade", "club"],
+    required: [true, "Please provide card rank"],
+  },
+});
+const CardDataModel = mongoose.model("cardData", CardDataSchema);
+
 const PlayerDataSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: [true, "UserId is required"],
+    unique: true,
   },
   seatNumber: {
     type: Number,
@@ -34,6 +49,7 @@ const PlayerDataSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  cards: { type: [CardDataSchema] },
 });
 const PlayerDataModel = mongoose.model("playerData", PlayerDataSchema);
 const GameSchema = new mongoose.Schema({
@@ -59,6 +75,10 @@ const GameSchema = new mongoose.Schema({
     required: [true, "Please provide gameType"],
     enum: Object.values(gameTypes),
   },
+  potAmount: {
+    type: Number,
+    default: 0,
+  },
   playerData: {
     type: [PlayerDataSchema],
     // default: [
@@ -74,4 +94,4 @@ const GameSchema = new mongoose.Schema({
 
 // hey theere
 const GameModel = mongoose.model("3-patti-game", GameSchema);
-module.exports = { GameModel, PlayerDataModel };
+module.exports = { GameModel, PlayerDataModel, CardDataModel };

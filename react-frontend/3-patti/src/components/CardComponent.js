@@ -23,15 +23,13 @@ export default function CardComponent({ rank, suit }) {
     9: 9,
     10: 10,
     J: 11, // Jack
-    Q: 12, // Queen
-    K: 13, // King
+    Q: 13, // Queen
+    K: 14, // King
   };
   // Function to get card unicode
   const getCardUnicode = (suit, rank) => {
     return String.fromCodePoint(SUITS[suit] + RANKS[rank]);
   };
-
-  const suits = { diamond: "◆", club: "♣️", heart: "♡", spade: "♤" };
   return (
     <div
       style={{
