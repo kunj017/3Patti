@@ -43,7 +43,8 @@ socketIO.on("connection", (socket) => {
 
   socket.on("newMessage", (newMessage) => {
     socket.broadcast.emit("newMessage", newMessage);
-    console.log(`new message recieved: ${newMessage.message}`);
+    console.log(`new message recieved: ${newMessage}`);
+    console.log(newMessage);
   });
 
   const startTimer = (roomId) => {

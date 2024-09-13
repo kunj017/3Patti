@@ -51,7 +51,7 @@ export default function GameArena({ socket }) {
   const [showChat, setShowChat] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
-  const currentPlayerUserId = JSON.parse(localStorage.getItem(roomId)).userId;
+  let currentPlayerUserId = null;
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
@@ -142,6 +142,7 @@ export default function GameArena({ socket }) {
     const userName = localStorage.getItem("userName");
     // Set UserName
     if (userName) {
+      setUserName(userName);
       console.log(`UserName: ${userName}`);
     } else {
       setOpenUserNameModal(true);
@@ -160,6 +161,7 @@ export default function GameArena({ socket }) {
         })
       );
     }
+    currentPlayerUserId = JSON.parse(localStorage.getItem(roomId)).userId;
 
     const roomDataInStorage = JSON.parse(localStorage.getItem(roomId));
     const newPlayerData = {
@@ -306,6 +308,7 @@ export default function GameArena({ socket }) {
           socket={socket}
           chatList={chatList}
           setChatList={setChatList}
+          currentUserName={userName}
         ></SharedChatComponent>
       </Box>
     );
@@ -544,6 +547,7 @@ export default function GameArena({ socket }) {
                 socket={socket}
                 chatList={chatList}
                 setChatList={setChatList}
+                currentUserName={userName}
               ></SharedChatComponent>
             </Stack>
           </div>

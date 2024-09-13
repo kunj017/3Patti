@@ -18,7 +18,7 @@ export default function MessageComponent({ message }) {
           mr: 1,
         }}
       >
-        {message.fromSelf ? "you: " : "UserName:"}
+        {message.fromSelf ? "you: " : message.userName}
       </Typography>
 
       <Typography

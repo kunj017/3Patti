@@ -61,14 +61,14 @@ const GameSchema = new mongoose.Schema({
   },
   playerData: {
     type: [PlayerDataSchema],
-    default: [
-      {
-        userId: "testing",
-        seatNumber: Math.floor(Math.random() * 8),
-        userName: "Kunj",
-        balance: 100,
-      },
-    ],
+    // default: [
+    //   {
+    //     userId: "testing",
+    //     seatNumber: Math.floor(Math.random() * 8),
+    //     userName: "Kunj",
+    //     balance: 100,
+    //   },
+    // ],
   },
 });
 

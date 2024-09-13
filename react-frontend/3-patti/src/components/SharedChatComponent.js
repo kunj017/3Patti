@@ -13,20 +13,34 @@ import ChatIcon from "@mui/icons-material/Chat";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import MessageComponent from "./MessageComponent";
 
-export default function SharedChatComponent({ socket, chatList, setChatList }) {
-  const [message, setMessage] = React.useState({ content: "" });
+export default function SharedChatComponent({
+  socket,
+  chatList,
+  setChatList,
+  currentUserName,
+}) {
+  const [message, setMessage] = React.useState({
+    content: "",
+    userName: currentUserName,
+  });
   function sendMessage() {
     setChatList((prevChatList) => [
       ...prevChatList,
-      { fromSelf: true, content: message.content },
+      { fromSelf: true, content: message.content, userName: currentUserName },
     ]);
-    socket.emit("newMessage", { message: message.content });
+    socket.emit("newMessage", {
+      content: message.content,
+      userName: currentUserName,
+    });
     //clear current message
     onMessageChange("");
   }
-  function onMessageChange(newContent) {
+  function onMessageChange(newMessage) {
     setMessage((previousMessage) => {
-      return { ...previousMessage, content: newContent };
+      return {
+        ...previousMessage,
+        content: newMessage,
+      };
     });
   }
   React.useEffect(() => {
@@ -39,7 +53,11 @@ export default function SharedChatComponent({ socket, chatList, setChatList }) {
       console.log(`newMessage recieved: ${newMessage}`);
       setChatList((prevChatList) => [
         ...prevChatList,
-        { fromSelf: false, content: newMessage.message },
+        {
+          fromSelf: false,
+          content: newMessage.content,
+          userName: newMessage.userName,
+        },
       ]);
     };
     socket.on("newMessage", onNewMessage);
