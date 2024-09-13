@@ -14,6 +14,7 @@ import {
   IconButton,
   Drawer,
   Divider,
+  Card,
 } from "@mui/material";
 import { green, teal, lightGreen } from "@mui/material/colors";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
@@ -39,6 +40,7 @@ export default function GameArena({ socket }) {
   const playerBoxCenterWidth = "20%";
   const numberOfPlayers = 8;
   const numberOfCards = 3;
+  const currentPot = 100;
   const [timer, setTimer] = React.useState(0);
   const [userName, setUserName] = React.useState("");
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
@@ -414,6 +416,21 @@ export default function GameArena({ socket }) {
                 >
                   {players[3]}
                 </Box>
+                <Card
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    height: playerBoxHeight,
+                    width: playerBoxCenterWidth,
+                    border: 1,
+                  }}
+                >
+                  <Typography
+                    variant="h4"
+                    sx={{ textAlign: "center" }}
+                  >{`POT: ${currentPot}`}</Typography>
+                </Card>
                 <Box
                   sx={{
                     height: playerBoxHeight,
