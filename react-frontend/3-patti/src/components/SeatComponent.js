@@ -2,7 +2,7 @@ import React from "react";
 import { Card, Box, Stack, Typography } from "@mui/material";
 import LoopIcon from "@mui/icons-material/Loop";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 
 export default function SeatComponent({
   numberOfWins,
@@ -13,16 +13,6 @@ export default function SeatComponent({
 }) {
   return (
     <>
-      {/* <Box
-        sx={{
-          height: 100,
-          width: 200,
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
-      > */}
       <Card
         sx={{
           height: "100%",
@@ -42,7 +32,7 @@ export default function SeatComponent({
           <Stack direction="row" sx={{ width: "100%" }}>
             <EmojiEventsIcon></EmojiEventsIcon>
             <sup>{numberOfWins}</sup>
-            <LoopIcon></LoopIcon>
+            <CurrencyRupeeIcon></CurrencyRupeeIcon>
             <sup>{numberOfReJoins}</sup>
             <div style={{ flexGrow: 1 }}></div>
             <Typography
@@ -85,7 +75,6 @@ export default function SeatComponent({
           </Stack>
         </Stack>
       </Card>
-      {/* </Box> */}
     </>
   );
 }

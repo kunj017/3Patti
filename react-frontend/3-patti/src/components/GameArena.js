@@ -19,6 +19,7 @@ import {
 import { green, teal, lightGreen } from "@mui/material/colors";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import TimerOffOutlinedIcon from "@mui/icons-material/TimerOffOutlined";
 import Grid from "@mui/material/Unstable_Grid2";
@@ -34,22 +35,24 @@ import CardComponent from "./CardComponent";
 import ControllerComponent from "./ControllerComponent";
 
 export default function GameArena({ socket }) {
+  const { roomId } = useParams();
   const navigate = useNavigate();
   const playerBoxHeight = "90%";
   const playerBoxWidth = "20%";
   const playerBoxCenterWidth = "20%";
+  const navBarColor = green[800];
   const numberOfPlayers = 8;
   const numberOfCards = 3;
   const currentPot = 100;
   const [timer, setTimer] = React.useState(0);
   const [userName, setUserName] = React.useState("");
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
-  const { roomId } = useParams();
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
-  const navBarColor = green[800];
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
+  const currentPlayerUserId = JSON.parse(localStorage.getItem(roomId)).userId;
+  const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
     bootAmount: 0,
@@ -64,6 +67,7 @@ export default function GameArena({ socket }) {
       balance: 0,
       currentBet: 0,
       userName: "",
+      currentCards: [],
     }));
   });
   const players = Array.from({ length: numberOfPlayers }, (_, i) => (
@@ -75,9 +79,11 @@ export default function GameArena({ socket }) {
       currentBalance={playerData[i].balance}
     ></SeatComponent>
   ));
-  const cards = Array.from({ length: numberOfCards }, (_, i) => (
-    <CardComponent rank={i + 2} suit="heart"></CardComponent>
-  ));
+  const cards = Array.from({ length: playerData.length }, (_, i) =>
+    playerData[i].currentCards.map((cardData) => (
+      <CardComponent rank={cardData.rank} suit={cardData.suit}></CardComponent>
+    ))
+  );
 
   // Set UserName
   const setUserNameModal = () => {
@@ -131,6 +137,7 @@ export default function GameArena({ socket }) {
       });
 
     console.log(playerData);
+    console.log(cards);
     // validate local storage.
     const userName = localStorage.getItem("userName");
     // Set UserName
@@ -182,8 +189,14 @@ export default function GameArena({ socket }) {
       const playerDataCopy = [...playerData];
       // console.log(data.playerData)
       data.data.playerData.map((playerData, i) => {
-        const { numberOfReJoins, numberOfWins, balance, currentBet, userName } =
-          playerData;
+        const {
+          numberOfReJoins,
+          numberOfWins,
+          balance,
+          currentBet,
+          userName,
+          currentCards,
+        } = playerData;
         let newPlayerData = {
           numberOfReJoins,
           numberOfWins,
@@ -192,8 +205,14 @@ export default function GameArena({ socket }) {
           userName,
         };
         newPlayerData.isOccupied = true;
+        if (currentCards) newPlayerData.currentCards = currentCards;
+        else newPlayerData.currentCards = [];
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
+        // set currentPlayerSeat
+        if (playerData.userId == currentPlayerUserId)
+          setCurrentPlayerSeat(seatNumber);
+        console.log(`CurrentPlayer Seat: ${currentPlayerSeat}`);
       });
       setPlayerData((prevData) => playerDataCopy);
       console.log(playerData);
@@ -245,16 +264,22 @@ export default function GameArena({ socket }) {
             resumeGame();
           }}
         >
-          <PlayCircleIcon></PlayCircleIcon>
+          <PlayCircleIcon sx={{ mr: 1 }}></PlayCircleIcon>
+          Start/Resume
         </IconButton>
         <IconButton
           onClick={() => {
             pauseGame();
           }}
         >
-          <PauseCircleIcon></PauseCircleIcon>
+          <PauseCircleIcon sx={{ mr: 1 }}></PauseCircleIcon>
+          Pause
         </IconButton>
-        <Typography>Hey</Typography>
+        <IconButton onClick={() => {}}>
+          <AccountBalanceIcon sx={{ mr: 1 }}></AccountBalanceIcon>
+          Add Money
+        </IconButton>
+
         <Button
           variant="contained"
           onClick={() => {
@@ -529,148 +554,4 @@ export default function GameArena({ socket }) {
       {setUserNameModal()}
     </>
   );
-}
-
-{
-  /* <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "2%",
-                top: "50%",
-                transform: "translate(0%, -50%)",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "20%",
-                top: "15%",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "40%",
-                top: "15%",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "60%",
-                top: "15%",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                right: "5%",
-                top: "50%",
-                transform: "translate(0%, -50%)",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "20%",
-                bottom: "10%",
-                transform: "translate(0%, 0%)",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "40%",
-                bottom: "10%",
-                transform: "translate(0%, 0%)",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box>
-            <Box
-              sx={{
-                height: 100,
-                width: 200,
-                position: "absolute",
-                left: "60%",
-                bottom: "10%",
-                transform: "translate(0%, 0%)",
-              }}
-            >
-              <SeatComponent
-                numberOfReJoins={1}
-                numberOfWins={2}
-                currentBet={40}
-                userName={"kunj"}
-                currentBalance={500}
-              ></SeatComponent>
-            </Box> */
 }
