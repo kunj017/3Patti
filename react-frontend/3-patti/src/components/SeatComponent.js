@@ -10,6 +10,9 @@ export default function SeatComponent({
   currentBet,
   userName,
   currentBalance,
+  seatNumber,
+  isOccupied,
+  isCurrentPlayer,
 }) {
   return (
     <>
@@ -18,7 +21,9 @@ export default function SeatComponent({
           height: "100%",
           width: "100%",
           padding: 0.3,
-          border: 1,
+          border: isCurrentPlayer ? 3 : 1,
+          borderColor: isCurrentPlayer ? "red" : "black",
+          backgroundColor: isOccupied ? "white" : "grey",
         }}
       >
         <Stack
@@ -60,7 +65,8 @@ export default function SeatComponent({
           >
             {userName}
           </Typography>
-          <Stack direction="row">
+          <Stack direction="row" sx={{ width: "100%" }}>
+            {seatNumber}
             <Typography
               variant="body2"
               sx={{
@@ -68,6 +74,7 @@ export default function SeatComponent({
                 borderRadius: 1,
                 paddingX: 1,
                 fontStyle: "italic",
+                marginX: "auto",
               }}
             >
               {`Balance: ${currentBalance}`}

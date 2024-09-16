@@ -79,6 +79,9 @@ export default function GameArena({ socket }) {
       currentBet={playerData[i].currentBet}
       userName={playerData[i].userName}
       currentBalance={playerData[i].balance}
+      seatNumber={i}
+      isOccupied={playerData[i].isOccupied}
+      isCurrentPlayer={currentPlayerSeat == i}
     ></SeatComponent>
   ));
   const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
@@ -227,9 +230,10 @@ export default function GameArena({ socket }) {
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
         // set currentPlayerSeat
-        if (playerData.userId == currentPlayerUserId)
-          setCurrentPlayerSeat(seatNumber);
-        console.log(`CurrentPlayer Seat: ${currentPlayerSeat}`);
+        if (playerData.userId == currentPlayerUserId) {
+          setCurrentPlayerSeat((prevSeat) => seatNumber);
+          console.log(`CurrentPlayer Seat: ${seatNumber}`);
+        }
       });
       setPlayerData((prevData) => playerDataCopy);
       console.log(playerDataCopy);
@@ -457,7 +461,7 @@ export default function GameArena({ socket }) {
                     width: playerBoxCenterWidth,
                   }}
                 >
-                  {players[3]}
+                  {players[7]}
                 </Box>
                 <Card
                   sx={{
@@ -480,21 +484,13 @@ export default function GameArena({ socket }) {
                     width: playerBoxCenterWidth,
                   }}
                 >
-                  {players[4]}
+                  {players[3]}
                 </Box>
               </Stack>
               <Stack
                 direction="row"
                 sx={{ justifyContent: "space-around", paddingX: 12 }}
               >
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[5]}
-                </Box>
                 <Box
                   sx={{
                     height: playerBoxHeight,
@@ -509,7 +505,15 @@ export default function GameArena({ socket }) {
                     width: playerBoxWidth,
                   }}
                 >
-                  {players[7]}
+                  {players[5]}
+                </Box>
+                <Box
+                  sx={{
+                    height: playerBoxHeight,
+                    width: playerBoxWidth,
+                  }}
+                >
+                  {players[4]}
                 </Box>
               </Stack>
               {/* Controller */}
