@@ -112,6 +112,24 @@ export default function GameArena({ socket }) {
   };
 
   useEffect(() => {
+    const onNewMessage = (newMessage) => {
+      console.log(`newMessage recieved: ${newMessage}`);
+      setChatList((prevChatList) => [
+        ...prevChatList,
+        {
+          fromSelf: false,
+          content: newMessage.content,
+          userName: newMessage.userName,
+        },
+      ]);
+    };
+    socket.on("newMessage", onNewMessage);
+    return () => {
+      socket.off("newMessage", onNewMessage);
+    };
+  }, []);
+
+  useEffect(() => {
     console.log(`Room Id: ${roomId}`);
     // Validate if room exists.
 

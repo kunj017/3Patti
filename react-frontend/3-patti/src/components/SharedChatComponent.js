@@ -48,22 +48,6 @@ export default function SharedChatComponent({
     // to always show the last message
     const chatbox = document.getElementById("chatbox");
     chatbox.scrollTop = chatbox.scrollHeight + 1;
-
-    const onNewMessage = (newMessage) => {
-      console.log(`newMessage recieved: ${newMessage}`);
-      setChatList((prevChatList) => [
-        ...prevChatList,
-        {
-          fromSelf: false,
-          content: newMessage.content,
-          userName: newMessage.userName,
-        },
-      ]);
-    };
-    socket.on("newMessage", onNewMessage);
-    return () => {
-      socket.off("newMessage", onNewMessage);
-    };
   }, [chatList]);
 
   return (

@@ -54,16 +54,16 @@ socketIO.on("connection", (socket) => {
   socket.on("disconnecting", () => {
     console.log(`🔥: ${socket.id} A user disconnecting`);
     console.log(socket.rooms);
-    Array.from(socket.rooms)
-      .filter((roomId) => roomId != socket.id)
-      .forEach(async (roomId) => {
-        await removePlayer(socket.userId, roomId);
-        const newGameData = await getRoomData(roomId);
-        console.log(`Removing player from roomId: ${roomId}`);
-        socketIO
-          .to(roomId)
-          .emit("updateGameData", { success: true, data: newGameData });
-      });
+    // Array.from(socket.rooms)
+    //   .filter((roomId) => roomId != socket.id)
+    //   .forEach(async (roomId) => {
+    //     await removePlayer(socket.userId, roomId);
+    //     const newGameData = await getRoomData(roomId);
+    //     console.log(`Removing player from roomId: ${roomId}`);
+    //     socketIO
+    //       .to(roomId)
+    //       .emit("updateGameData", { success: true, data: newGameData });
+    //   });
   });
 
   socket.on("newMessage", (newMessage) => {
