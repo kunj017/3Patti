@@ -65,6 +65,7 @@ export default function GameArena({ socket }) {
   });
   const [playerData, setPlayerData] = React.useState(() => {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
+      userId: "",
       isOccupied: false,
       numberOfReJoins: 0,
       numberOfWins: 0,
@@ -85,6 +86,12 @@ export default function GameArena({ socket }) {
       seatNumber={i}
       isOccupied={playerData[i].isOccupied}
       state={playerData[i].state}
+      onRemovePlayer={(seatNumber) => {
+        socket.emit("removePlayer", {
+          roomId: roomId,
+          userId: playerData[i].userId,
+        });
+      }}
     ></SeatComponent>
   ));
   const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
@@ -226,6 +233,7 @@ export default function GameArena({ socket }) {
           userName,
           cards,
           state,
+          userId,
         } = playerData;
         let newPlayerData = {
           numberOfReJoins,
@@ -234,6 +242,7 @@ export default function GameArena({ socket }) {
           currentBet,
           userName,
           state,
+          userId,
         };
         newPlayerData.isOccupied = true;
         if (cards) newPlayerData.cards = cards;

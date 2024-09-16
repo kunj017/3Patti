@@ -1,8 +1,9 @@
 import React from "react";
-import { Card, Box, Stack, Typography } from "@mui/material";
+import { Card, Box, Stack, Typography, IconButton } from "@mui/material";
 import LoopIcon from "@mui/icons-material/Loop";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
+import CloseIcon from "@mui/icons-material/Close";
 
 export default function SeatComponent({
   numberOfWins,
@@ -14,6 +15,7 @@ export default function SeatComponent({
   isOccupied,
   isActivePlayer,
   state,
+  onRemovePlayer,
 }) {
   return (
     <>
@@ -62,19 +64,33 @@ export default function SeatComponent({
               {`Bet: ${currentBet}`}
             </Typography>
           </Stack>
-          <Typography
-            variant="h6"
-            sx={{
-              width: "fit-content",
-              borderRadius: 1,
-              border: 1,
-              paddingX: 1,
-              textTransform: "capitalize",
-            }}
-          >
-            {isOccupied ? userName : "Empty"}
-          </Typography>
           <Stack direction="row" sx={{ width: "100%" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                width: "fit-content",
+                borderRadius: 1,
+                border: 1,
+                paddingX: 1,
+                marginX: "auto",
+                textTransform: "capitalize",
+              }}
+            >
+              {isOccupied ? userName : "Empty"}
+            </Typography>
+            <IconButton
+              size="small"
+              color="error"
+              disabled={!isOccupied}
+              onClick={() => {
+                onRemovePlayer(seatNumber);
+              }}
+            >
+              <CloseIcon fontSize="small"></CloseIcon>
+            </IconButton>
+          </Stack>
+
+          <Stack direction="row" sx={{ width: "100%", alignItems: "center" }}>
             {seatNumber}
             <Typography
               variant="body2"
