@@ -57,6 +57,7 @@ export default function GameArena({ socket }) {
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
+    potAmount: 0,
     bootAmount: 0,
     maxBet: 0,
     gameType: "",
@@ -71,6 +72,7 @@ export default function GameArena({ socket }) {
       currentBet: 0,
       userName: "",
       cards: [],
+      state: "",
     }));
   });
   const players = Array.from({ length: numberOfPlayers }, (_, i) => (
@@ -82,7 +84,7 @@ export default function GameArena({ socket }) {
       currentBalance={playerData[i].balance}
       seatNumber={i}
       isOccupied={playerData[i].isOccupied}
-      isActivePlayer={gameData.activePlayer == i}
+      state={playerData[i].state}
     ></SeatComponent>
   ));
   const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
@@ -202,6 +204,7 @@ export default function GameArena({ socket }) {
       console.log(data);
       setGameData((prevData) => {
         return {
+          potAmount: data.data.potAmount,
           entryAmount: data.data.entryAmount,
           bootAmount: data.data.bootAmount,
           maxBet: data.data.maxBet,
@@ -222,6 +225,7 @@ export default function GameArena({ socket }) {
           currentBet,
           userName,
           cards,
+          state,
         } = playerData;
         let newPlayerData = {
           numberOfReJoins,
@@ -229,6 +233,7 @@ export default function GameArena({ socket }) {
           balance,
           currentBet,
           userName,
+          state,
         };
         newPlayerData.isOccupied = true;
         if (cards) newPlayerData.cards = cards;
@@ -482,7 +487,7 @@ export default function GameArena({ socket }) {
                   <Typography
                     variant="h4"
                     sx={{ textAlign: "center" }}
-                  >{`POT: ${currentPot}`}</Typography>
+                  >{`POT: ${gameData.potAmount}`}</Typography>
                 </Card>
                 <Box
                   sx={{

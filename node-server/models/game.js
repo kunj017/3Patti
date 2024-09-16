@@ -49,6 +49,12 @@ const PlayerDataSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  state: {
+    type: String,
+    enum: ["current", "active", "fold", "idle", "winner"],
+    // current: currentPlayer, active: In game, fold: eliminated from current game, idle: in room,
+    default: "idle",
+  },
   cards: { type: [CardDataSchema] },
 });
 const PlayerDataModel = mongoose.model("playerData", PlayerDataSchema);

@@ -13,6 +13,7 @@ export default function SeatComponent({
   seatNumber,
   isOccupied,
   isActivePlayer,
+  state,
 }) {
   return (
     <>
@@ -21,9 +22,17 @@ export default function SeatComponent({
           height: "100%",
           width: "100%",
           padding: 0.3,
-          border: isActivePlayer ? 3 : 1,
-          borderColor: isActivePlayer ? "red" : "black",
-          backgroundColor: isOccupied ? "white" : "grey",
+          border: state == "current" || state == "winner" ? 3 : 1,
+          borderColor:
+            state == "current" ? "red" : state == "winner" ? "green" : "black",
+          backgroundColor:
+            isOccupied == false
+              ? "grey"
+              : state == "idle"
+              ? "blue"
+              : state == "fold"
+              ? "silver"
+              : "white",
         }}
       >
         <Stack

@@ -32,6 +32,7 @@ app.use(
 const roomTimers = {};
 const gameInstances = {};
 const timerLimit = 30; // seconds
+const timeBeforeNewGame = 10;
 const numberOfCards = 52;
 const SUIT_MAP = { 0: "heart", 1: "diamond", 2: "spade", 3: "club" };
 const RANK_MAP = {
@@ -53,29 +54,30 @@ const RANK_MAP = {
 class GameInstance {
   #interval = null;
   #timer = timerLimit;
-  #playerData = null;
+  #timerBeforeNewGame = 0;
+  #playerData = [];
   #gameData = null;
   #roomId = null;
   currentPlayer = 0;
   #GAME_STATE = Object.freeze({
     paused: "paused",
     active: "active",
-    terimated: "terminated",
+    terminated: "terminated",
   });
   #PLAYER_STATE = Object.freeze({
     active: "active",
-    idle: "idle",
+    fold: "fold",
   });
-  #state = this.#GAME_STATE.terimated;
+  #state = this.#GAME_STATE.terminated;
   constructor(roomId) {
     this.#roomId = roomId;
   }
-  async init() {
-    await this.resetGameData(this.#roomId);
+  async setupNewGame() {
     await this.fetchGameData(this.#roomId);
+    await this.resetGameData(this.#roomId);
     await this.startPot(this.#roomId);
     await this.distributeCards(this.#roomId, this.#playerData);
-    await this.broadcastData(this.#roomId);
+    await this.broadcastData();
   }
   async startPot(roomId) {
     await Promise.all(
@@ -106,6 +108,30 @@ class GameInstance {
       { _id: roomId },
       { $set: { "playerData.$[].cards": [], "playerData.$[].currentBet": 0 } }
     );
+    await GameModel.updateMany(
+      { _id: roomId },
+      { $set: { "playerData.$[].state": "idle" } }
+    );
+    await GameModel.updateOne(
+      { _id: roomId },
+      { $set: { "playerData.$[elem].state": "active" } },
+      {
+        arrayFilters: [
+          {
+            "elem.userId": {
+              $in: this.#playerData.map((playerData) => playerData.userId),
+            },
+          },
+        ],
+      }
+    );
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.state": "current" } }
+    );
   }
   async onUserEvent(userEvent, userId) {
     if (userId != this.#playerData[this.currentPlayer].userId) {
@@ -129,9 +155,6 @@ class GameInstance {
       default:
         console.log("Unknown user action !!");
     }
-    this.updateCurrentPlayer();
-    await this.broadcastData();
-    this.resetTimer();
   }
   async bet(betAmount) {
     // Update player data and pot data.
@@ -144,6 +167,13 @@ class GameInstance {
       { $inc: { "playerData.$.balance": -betAmount } }
     );
     await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.currentBet": betAmount } }
+    );
+    await GameModel.updateOne(
       { _id: this.#roomId },
       {
         $inc: {
@@ -151,45 +181,106 @@ class GameInstance {
         },
       }
     );
+    await this.updateCurrentPlayer();
   }
   show() {
     // Check if it is show or sideShow.
     // Check comparison, declare winner.
   }
-  fold() {
+  async fold() {
     // remove player. Update player state. Update PlayerData.
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.state": "fold" } }
+    );
+    this.#playerData.splice(this.currentPlayer, 1);
+
+    await this.updateCurrentPlayer(true);
   }
   pauseGame() {
     // remove interval
     clearInterval(this.#interval);
     this.#state = this.#GAME_STATE.paused;
   }
-  resetTimer() {
+  async resetTimer() {
     this.#timer = timerLimit;
-    this.startGame();
+    await this.startGame();
   }
-  startGame() {
+  async startGame() {
+    if (this.#state === this.#GAME_STATE.terminated) {
+      console.log("Have to setUp new Game");
+      await this.setupNewGame();
+    }
     // set interval
     this.#state = this.#GAME_STATE.active;
     if (this.#interval) {
       clearInterval(this.#interval);
     }
-    this.#interval = setInterval(() => {
-      if (this.#timer > 0) {
+    this.#interval = setInterval(async () => {
+      if (this.#timerBeforeNewGame > 0) {
+        this.#timerBeforeNewGame--;
+        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
+      } else if (this.#timer > 0) {
         this.#timer--;
         socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
       } else {
         console.log(`Timer ended for room: ${this.#roomId}`);
         this.fold();
-        this.updateCurrentPlayer();
-        this.broadcastData();
+        // await this.updateCurrentPlayer();
         this.#timer = timerLimit;
       }
     }, 1000);
     this.broadcastData();
   }
-  updateCurrentPlayer() {
-    this.currentPlayer = (this.currentPlayer + 1) % this.#playerData.length;
+  async startNewGame() {
+    // this.#timerBeforeNewGame = timeBeforeNewGame;
+    // this.resetTimer();
+    if (this.#interval) {
+      clearInterval(this.#interval);
+    }
+    this.#state = this.#GAME_STATE.terminated;
+    setTimeout(async () => {
+      console.log("creating new game");
+      await this.resetTimer();
+    }, timeBeforeNewGame * 1000);
+  }
+  async updateCurrentPlayer(removeCurrentPlayer = false) {
+    if (!removeCurrentPlayer) {
+      await GameModel.updateMany(
+        {
+          _id: this.#roomId,
+          "playerData.userId": this.#playerData[this.currentPlayer].userId,
+        },
+        { $set: { "playerData.$.state": "active" } }
+      );
+      this.currentPlayer = (this.currentPlayer + 1) % this.#playerData.length;
+    } else {
+      this.currentPlayer = this.currentPlayer % this.#playerData.length;
+    }
+    if (this.#playerData.length == 1) {
+      await GameModel.updateMany(
+        {
+          _id: this.#roomId,
+          "playerData.userId": this.#playerData[this.currentPlayer].userId,
+        },
+        { $set: { "playerData.$.state": "winner" } }
+      );
+      this.broadcastData();
+      await this.startNewGame();
+      return;
+    }
+    await GameModel.updateMany(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.state": "current" } }
+    );
+    await this.broadcastData();
+    await this.resetTimer();
   }
   createAndShuffleArray(n) {
     // Create an array of size n
@@ -278,6 +369,10 @@ socketIO.on("connection", (socket) => {
     console.log("Join room called");
     const response = { success: true };
     const roomId = newUserData.roomId;
+    if (!gameInstances[roomId]) {
+      const gameInstance = new GameInstance(roomId);
+      gameInstances[roomId] = gameInstance;
+    }
 
     const isValidRoom = await isValidRoomId(roomId);
     if (!isValidRoom) {
@@ -297,11 +392,7 @@ socketIO.on("connection", (socket) => {
 
   const onStartGame = async (roomId) => {
     console.log(`StartGame called for roomId: ${roomId}`);
-    if (!gameInstances[roomId]) {
-      const gameInstance = new GameInstance(roomId);
-      gameInstances[roomId] = gameInstance;
-      gameInstance.init();
-    }
+
     gameInstances[roomId].startGame();
   };
   const onPlayerAction = async (req) => {
