@@ -30,6 +30,7 @@ app.use(
 );
 
 const roomTimers = {};
+const gameInstances = {};
 const timerLimit = 30; // seconds
 const numberOfCards = 52;
 const SUIT_MAP = { 0: "heart", 1: "diamond", 2: "spade", 3: "club" };
@@ -48,6 +49,143 @@ const RANK_MAP = {
   12: "Q",
   13: "K",
 };
+
+class GameInstance {
+  #interval = null;
+  #timer = timerLimit;
+  #playerData = null;
+  #roomId = null;
+  currentPlayer = 0;
+  #stateEnum = Object.freeze({
+    paused: "paused",
+    active: "active",
+  });
+  #state = this.#stateEnum.active;
+  constructor(roomId) {
+    this.#roomId = roomId;
+  }
+  async init() {
+    await this.fetchPlayerData(this.#roomId);
+    await this.distributeCards(this.#roomId, this.#playerData);
+    await this.broadcastData(this.#roomId);
+  }
+  async fetchPlayerData(roomId) {
+    this.#playerData = (
+      await GameModel.findOne({ _id: roomId }).lean()
+    ).playerData;
+  }
+  async resetGameData(roomId) {
+    // Reset Pot, player cards, player bets
+    await GameModel.updateOne({ _id: roomId }, { $set: { potAmount: 0 } });
+    await GameModel.updateMany(
+      { _id: roomId },
+      { $set: { "playerData.$[].cards": [], "playerData.$[].currentBet": 0 } }
+    );
+  }
+  onUserEvent(userEvent) {
+    // userEvent = {event:"bet/show/fold", value:""}
+  }
+  bet() {
+    // Update player data and pot data.
+    // Update currentPlayer.
+  }
+  show() {
+    // Check if it is show or sideShow.
+    // Check comparison, declare winner.
+  }
+  fold() {
+    // remove player. Update player state. Update PlayerData.
+  }
+  pauseGame() {
+    // remove interval
+    clearInterval(this.#interval);
+    this.#state = this.#stateEnum.paused;
+  }
+  resetTimer() {
+    this.#timer = timerLimit;
+    this.startGame();
+  }
+  startGame() {
+    // set interval
+    this.#state = this.#stateEnum.active;
+    if (this.#interval) {
+      clearInterval(this.#interval);
+    }
+    this.#interval = setInterval(() => {
+      if (this.#timer > 0) {
+        this.#timer--;
+        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
+      } else {
+        console.log(`Timer ended for room: ${this.#roomId}`);
+        this.updateCurrentPlayer();
+        this.broadcastData(this.#roomId);
+        this.#timer = timerLimit;
+      }
+    }, 1000);
+    this.broadcastData(this.#roomId);
+  }
+  updateCurrentPlayer() {
+    this.currentPlayer = (this.currentPlayer + 1) % this.#playerData.length;
+  }
+  createAndShuffleArray(n) {
+    // Create an array of size n
+    let arr = Array.from({ length: n }, (_, i) => i + 1);
+
+    // Fisher-Yates shuffle
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr;
+  }
+
+  async createCardObject(value) {
+    let rank = RANK_MAP[(value % 13) + 1];
+    let suit = SUIT_MAP[value % 4];
+    const newCard = await CardDataModel.create({ rank: rank, suit: suit });
+    return newCard;
+  }
+  async distributeCards(roomId, players) {
+    // Shuffle a new deck and assign cards to each player.
+    const deck = this.createAndShuffleArray(numberOfCards);
+    console.log("new deck: ");
+    console.log(deck);
+    const cards = [];
+    for (let i = 0; i < players.length; i++) {
+      cards.push(
+        await Promise.all(
+          deck.slice(3 * i, 3 * i + 3).map(async (value) => {
+            const cardObject = await this.createCardObject(value);
+            return cardObject;
+          })
+        )
+      );
+    }
+    console.log("New Generated cards: ");
+    console.log(cards);
+    await Promise.all(
+      players.map(async (playerData, i) => {
+        await GameModel.updateOne(
+          {
+            _id: roomId,
+            "playerData.userId": playerData.userId,
+          },
+          { $set: { "playerData.$.cards": cards[i] } }
+        );
+      })
+    );
+  }
+  async broadcastData(roomId) {
+    const updatedData = await GameModel.findById(roomId).lean();
+    updatedData.activePlayer = this.currentPlayer;
+    console.log("updated game data: ");
+    console.log(updatedData);
+    socketIO
+      .to(roomId)
+      .emit("updateGameData", { success: true, data: updatedData });
+  }
+}
 
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
@@ -72,42 +210,11 @@ socketIO.on("connection", (socket) => {
     console.log(newMessage);
   });
 
-  const startTimer = (roomId) => {
-    if (!roomTimers[roomId]) {
-      roomTimers[roomId] = { timer: timerLimit, interval: null };
-    }
-    const roomData = roomTimers[roomId];
-    console.log(roomData);
-    if (!roomData.interval) {
-      console.log(`Timer started for room: ${roomId}`);
-      roomData.interval = setInterval(() => {
-        if (roomData.timer > 0) {
-          roomData.timer--;
-          socketIO.to(roomId).emit("timeUpdate", roomData.timer); // Send the timer only to clients in the room
-        } else {
-          console.log(`Timer ended for room: ${roomId}`);
-          clearInterval(roomData.interval);
-          roomData.interval = null;
-        }
-      }, 1000);
-    }
-  };
-
-  const resetTimer = (roomId) => {
-    if (roomTimers[roomId]) {
-      if (roomTimers[roomId].interval) {
-        clearInterval(roomTimers[roomId].interval);
-      }
-      roomTimers[roomId].interval = null;
-      roomTimers[roomId].timer = timerLimit;
-    }
-    startTimer(roomId);
-  };
-
   const handleJoinRoom = async (newUserData) => {
     console.log("Join room called");
     const response = { success: true };
     const roomId = newUserData.roomId;
+
     const isValidRoom = await isValidRoomId(roomId);
     if (!isValidRoom) {
       response.success = false;
@@ -118,134 +225,35 @@ socketIO.on("connection", (socket) => {
     if (response.success) {
       response.data = await getRoomData(roomId);
       socket.join(roomId);
-
       socket.userId = newUserData.userId;
     }
+
     socketIO.to(roomId).emit("updateGameData", response);
   };
 
-  async function resetGameData(roomId) {
-    // Reset Pot, player cards, player bets
-    await GameModel.updateOne({ _id: roomId }, { $set: { potAmount: 0 } });
-    await GameModel.updateMany(
-      { _id: roomId },
-      { $set: { "playerData.$[].cards": [], "playerData.$[].currentBet": 0 } }
-    );
-  }
-  function createAndShuffleArray(n) {
-    // Create an array of size n
-    let arr = Array.from({ length: n }, (_, i) => i + 1);
-
-    // Fisher-Yates shuffle
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-
-    return arr;
-  }
-
-  async function createCardObject(value) {
-    let rank = RANK_MAP[(value % 13) + 1];
-    let suit = SUIT_MAP[value % 4];
-    const newCard = await CardDataModel.create({ rank: rank, suit: suit });
-    return newCard;
-  }
-  async function distributeCards(roomId, players) {
-    // Shuffle a new deck and assign cards to each player.
-    const deck = createAndShuffleArray(numberOfCards);
-    console.log("new deck: ");
-    console.log(deck);
-    const cards = [];
-    for (let i = 0; i < players.length; i++) {
-      cards.push(
-        await Promise.all(
-          deck.slice(3 * i, 3 * i + 3).map(async (value) => {
-            const cardObject = await createCardObject(value);
-            return cardObject;
-          })
-        )
-      );
-    }
-    console.log("New Generated cards: ");
-    console.log(cards);
-    await Promise.all(
-      players.map(async (playerData, i) => {
-        await GameModel.updateOne(
-          {
-            _id: roomId,
-            "playerData.userId": playerData.userId,
-          },
-          { $set: { "playerData.$.cards": cards[i] } }
-        );
-      })
-    );
-  }
   const onStartGame = async (roomId) => {
     console.log(`StartGame called for roomId: ${roomId}`);
-    resetTimer(roomId);
-    await resetGameData(roomId);
-    const players = (await GameModel.findOne({ _id: roomId }).lean())
-      .playerData;
-    console.log("Players for currentGame: ");
-    console.log(players);
-    await distributeCards(roomId, players);
-    const updatedData = await GameModel.findById(roomId).lean();
-    console.log("updated game data: ");
-    console.log(updatedData);
-    socketIO
-      .to(roomId)
-      .emit("updateGameData", { success: true, data: updatedData });
+    if (!gameInstances[roomId]) {
+      const gameInstance = new GameInstance(roomId);
+      gameInstances[roomId] = gameInstance;
+      gameInstance.init();
+    }
+    gameInstances[roomId].startGame();
   };
-  const onPlayerAction = async (action) => {};
-  const onPauseGame = async (roomId) => {};
-
+  const onPlayerAction = async (roomId, action) => {
+    gameInstances[roomId].onUserEvent(action);
+  };
+  const onPauseGame = async (roomId) => {
+    gameInstances[roomId].pauseGame();
+  };
+  const onResetTimer = async (roomId) => {
+    gameInstances[roomId].resetTimer();
+  };
   socket.on("startGame", onStartGame);
   socket.on("pauseGame", onPauseGame);
   socket.on("playerAction", onPlayerAction);
-  socket.on("resetTimer", resetTimer);
-
+  socket.on("resetTimer", onResetTimer);
   socket.on("joinRoom", handleJoinRoom);
-
-  // Testing
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`${socket.id} joined room with roomId: ${roomId}`);
-  });
-  socket.on("setUserData", async (data) => {
-    console.log(`New User Data: ${JSON.stringify(data)}`);
-    socket.data.userName = data;
-    allClients = await socketIO.fetchSockets();
-    allClientsName = allClients
-      .filter((client) => {
-        return "userName" in client.data;
-      })
-      .map((client) => {
-        console.log(`key exists ${client.data.userName}`);
-        return client.data.userName;
-      });
-    console.log(
-      `All clients userName: ${allClientsName} length: ${allClientsName.length}`
-    );
-    socketIO.emit("allClientsName", allClientsName);
-    const socketData = allClients.map((client) => {
-      return { userName: client.data.userName, id: client.id };
-    });
-    socketIO.emit("allClients", socketData);
-  });
-
-  // lol
-  socket.on("submit", async (data) => {
-    console.log(`Submit called: ${JSON.stringify(data)}`);
-    socketIO.emit("submitresponse", data);
-    const allClients = await socketIO.fetchSockets();
-    allClients.map((client) => console.log(client.data));
-    console.log(
-      `All clients: ${allClients}, length: ${Object.keys(allClients).length}`
-    );
-
-    // socket.broadcast.emit("submitresponse", data);
-  });
 });
 
 // Function to check if data exists by ID

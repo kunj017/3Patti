@@ -60,6 +60,7 @@ export default function GameArena({ socket }) {
     bootAmount: 0,
     maxBet: 0,
     gameType: "",
+    activePlayer: null,
   });
   const [playerData, setPlayerData] = React.useState(() => {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
@@ -81,7 +82,7 @@ export default function GameArena({ socket }) {
       currentBalance={playerData[i].balance}
       seatNumber={i}
       isOccupied={playerData[i].isOccupied}
-      isCurrentPlayer={currentPlayerSeat == i}
+      isCurrentPlayer={gameData.activePlayer == i}
     ></SeatComponent>
   ));
   const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
@@ -199,12 +200,17 @@ export default function GameArena({ socket }) {
       }
       console.log("Game data from Server:");
       console.log(data);
-      setGameData((prevData) => ({
-        entryAmount: data.entryAmount,
-        bootAmount: data.bootAmount,
-        maxBet: data.maxBet,
-        gameType: data.gameType,
-      }));
+      setGameData((prevData) => {
+        return {
+          entryAmount: data.data.entryAmount,
+          bootAmount: data.data.bootAmount,
+          maxBet: data.data.maxBet,
+          gameType: data.data.gameType,
+          activePlayer: data.data.activePlayer,
+        };
+      });
+      console.log("Game data updated: ");
+      console.log(gameData);
       // const playerData = data.playerData;
       const playerDataCopy = [...playerData];
       // console.log(data.playerData)
