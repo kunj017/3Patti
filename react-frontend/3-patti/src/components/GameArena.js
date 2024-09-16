@@ -82,7 +82,7 @@ export default function GameArena({ socket }) {
       currentBalance={playerData[i].balance}
       seatNumber={i}
       isOccupied={playerData[i].isOccupied}
-      isCurrentPlayer={gameData.activePlayer == i}
+      isActivePlayer={gameData.activePlayer == i}
     ></SeatComponent>
   ));
   const cards = playerData[currentPlayerSeat].cards.map((cardData) => (
@@ -544,6 +544,8 @@ export default function GameArena({ socket }) {
                   {cards.map((card) => card)}
                 </Stack>
                 <ControllerComponent
+                  socket={socket}
+                  roomId={roomId}
                   canShow={false}
                   playerBalance={200}
                   currentGameBet={30}

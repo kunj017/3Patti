@@ -12,7 +12,7 @@ export default function SeatComponent({
   currentBalance,
   seatNumber,
   isOccupied,
-  isCurrentPlayer,
+  isActivePlayer,
 }) {
   return (
     <>
@@ -21,8 +21,8 @@ export default function SeatComponent({
           height: "100%",
           width: "100%",
           padding: 0.3,
-          border: isCurrentPlayer ? 3 : 1,
-          borderColor: isCurrentPlayer ? "red" : "black",
+          border: isActivePlayer ? 3 : 1,
+          borderColor: isActivePlayer ? "red" : "black",
           backgroundColor: isOccupied ? "white" : "grey",
         }}
       >
@@ -63,7 +63,7 @@ export default function SeatComponent({
               textTransform: "capitalize",
             }}
           >
-            {userName}
+            {isOccupied ? userName : "Empty"}
           </Typography>
           <Stack direction="row" sx={{ width: "100%" }}>
             {seatNumber}

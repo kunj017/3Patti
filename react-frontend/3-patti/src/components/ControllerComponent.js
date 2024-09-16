@@ -11,16 +11,18 @@ import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 export default function ControllerComponent({
+  socket,
+  roomId,
   currentGameBet,
   playerBalance,
   canShow,
-  onShow,
-  onFold,
-  onBet,
 }) {
   const betIncrement = 5;
   const [bet, setBet] = React.useState(0);
   const [customState, setCustomState] = React.useState(false);
+  function onPlayerAction(playerAction) {
+    socket.emit("playerAction", {roomId:roomId, action:playerAction});
+  }
   return (
     <>
       <Stack
@@ -35,7 +37,12 @@ export default function ControllerComponent({
         {/* Bet */}
         <Stack direction="row" sx={{ flexGrow: 2, alignItems: "end" }}>
           <Stack direction="column">
-            <Button variant="contained">{`Bet: ${bet}`}</Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                onPlayerAction({ event: "bet", value: bet });
+              }}
+            >{`Bet: ${bet}`}</Button>
             <Stack direction="row"></Stack>
           </Stack>
           <Slider
@@ -51,9 +58,23 @@ export default function ControllerComponent({
           ></Slider>
         </Stack>
         {/* <Divider orientation="vertical" flexItem /> */}
-        <Button variant="contained">{canShow ? "Side Show" : "Show"}</Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            onPlayerAction({ event: "show" });
+          }}
+        >
+          {canShow ? "Show" : "Side Show"}
+        </Button>
         {/* <Divider orientation="vertical" flexItem /> */}
-        <Button variant="contained">Fold</Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            onPlayerAction({ event: "fold" });
+          }}
+        >
+          Fold
+        </Button>
       </Stack>
     </>
   );
