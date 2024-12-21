@@ -40,7 +40,7 @@ const compareLexicographically = (a, b) => {
           return card.value;
         }
       })
-      .sort();
+      .sort((a, b) => a - b);
     return modifiedCards;
   };
 
@@ -69,7 +69,7 @@ function comparePair(a, b) {
           return card.value;
         }
       })
-      .sort();
+      .sort((a, b) => a - b);
     return modifiedCards;
   };
 

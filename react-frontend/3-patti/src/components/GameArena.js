@@ -76,6 +76,7 @@ export default function GameArena({ socket }) {
       state: "",
     }));
   });
+  const minBet = Math.max(...playerData.map((data) => data.currentBet));
   const players = Array.from({ length: numberOfPlayers }, (_, i) => (
     <SeatComponent
       numberOfReJoins={playerData[i].numberOfReJoins}
@@ -316,7 +317,7 @@ export default function GameArena({ socket }) {
           <PauseCircleIcon sx={{ mr: 1 }}></PauseCircleIcon>
           Pause
         </IconButton>
-        <IconButton onClick={() => {}}>
+        <IconButton onClick={() => { }}>
           <AccountBalanceIcon sx={{ mr: 1 }}></AccountBalanceIcon>
           Add Money
         </IconButton>
@@ -562,7 +563,8 @@ export default function GameArena({ socket }) {
                   roomId={roomId}
                   canShow={false}
                   playerBalance={200}
-                  currentGameBet={30}
+                  isActive={playerData[currentPlayerSeat].state == "current"}
+                  minBet={Math.max(minBet, gameData.bootAmount)}
                 ></ControllerComponent>
 
                 <Stack direction="row" sx={{ alignItems: "center" }}>

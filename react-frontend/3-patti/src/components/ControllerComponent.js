@@ -6,23 +6,27 @@ import {
   Stack,
   Divider,
 } from "@mui/material";
-import React from "react";
+import React, { useEffect } from "react";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 export default function ControllerComponent({
   socket,
   roomId,
-  currentGameBet,
   playerBalance,
   canShow,
+  isActive,
+  minBet,
 }) {
   const betIncrement = 5;
   const [bet, setBet] = React.useState(0);
   const [customState, setCustomState] = React.useState(false);
   function onPlayerAction(playerAction) {
-    socket.emit("playerAction", {roomId:roomId, action:playerAction});
+    socket.emit("playerAction", { roomId: roomId, action: playerAction });
   }
+  useEffect(() => {
+    setBet((prevBet) => minBet);
+  }, [minBet]);
   return (
     <>
       <Stack
@@ -42,14 +46,15 @@ export default function ControllerComponent({
               onClick={() => {
                 onPlayerAction({ event: "bet", value: bet });
               }}
+              disabled={!isActive}
             >{`Bet: ${bet}`}</Button>
             <Stack direction="row"></Stack>
           </Stack>
           <Slider
-            value={bet}
+            value={Math.max(bet, minBet)}
             valueLabelDisplay="auto"
-            min={currentGameBet}
-            max={Math.min(2 * currentGameBet, playerBalance)}
+            min={minBet}
+            max={Math.min(2 * minBet, playerBalance)}
             step={betIncrement}
             onChange={(event) => {
               setBet(event.target.value);
@@ -63,6 +68,7 @@ export default function ControllerComponent({
           onClick={() => {
             onPlayerAction({ event: "show" });
           }}
+          disabled={!isActive}
         >
           {canShow ? "Show" : "Side Show"}
         </Button>
@@ -72,6 +78,7 @@ export default function ControllerComponent({
           onClick={() => {
             onPlayerAction({ event: "fold" });
           }}
+          disabled={!isActive}
         >
           Fold
         </Button>

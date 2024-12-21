@@ -8,6 +8,7 @@ const { gameType } = require("./3-patti/enums");
 const { createGame } = require("./controller/createGame");
 const { GameModel, PlayerDataModel, CardDataModel } = require("./models/game");
 const { Socket } = require("socket.io");
+const compareHands = require("./3-patti/variations/normal");
 require("dotenv").config();
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(
   })
 );
 
+// TOOD: Create a constant file for this.
 const roomTimers = {};
 const gameInstances = {};
 const timerLimit = 30; // seconds
@@ -50,7 +52,31 @@ const RANK_MAP = {
   12: "Q",
   13: "K",
 };
+const RANK_REVERSE_MAP = {
+  A: 1,
+  2: 2,
+  3: 3,
+  4: 4,
+  5: 5,
+  6: 6,
+  7: 7,
+  8: 8,
+  9: 9,
+  10: 10,
+  J: 11,
+  Q: 12,
+  K: 13,
+};
 
+// TODO: Create a class for playerdata as well.
+// TODO: Move this class to a new file.
+
+/**
+ * This holds a snapshot of a room and manages its data. Always call setupNewGame() to create a new instance.
+ * 
+ * Data required:
+ * 1. Room Id
+ */
 class GameInstance {
   #interval = null;
   #timer = timerLimit;
@@ -72,6 +98,7 @@ class GameInstance {
   constructor(roomId) {
     this.#roomId = roomId;
   }
+  // TODO: Convert all functions to use class members directly.
   async setupNewGame() {
     await this.fetchGameData(this.#roomId);
     await this.resetGameData(this.#roomId);
@@ -79,39 +106,24 @@ class GameInstance {
     await this.distributeCards(this.#roomId, this.#playerData);
     await this.broadcastData();
   }
-  async startPot(roomId) {
-    await Promise.all(
-      this.#playerData.map(async (player) => {
-        await GameModel.updateOne(
-          { _id: roomId, "playerData.userId": player.userId },
-          { $inc: { "playerData.$.balance": -this.#gameData.bootAmount } }
-        );
-      })
-    );
-    await GameModel.updateOne(
-      { _id: roomId },
-      {
-        $inc: {
-          potAmount: this.#playerData.length * this.#gameData.bootAmount,
-        },
-      }
-    );
-  }
   async fetchGameData(roomId) {
     this.#gameData = await GameModel.findOne({ _id: roomId }).lean();
     this.#playerData = this.#gameData.playerData;
   }
   async resetGameData(roomId) {
-    // Reset Pot, player cards, player bets
+    // TODO update together all queries which have same selector.
+    // Set pot to 0
     await GameModel.updateOne({ _id: roomId }, { $set: { potAmount: 0 } });
     await GameModel.updateMany(
       { _id: roomId },
       { $set: { "playerData.$[].cards": [], "playerData.$[].currentBet": 0 } }
     );
+    // Set player state to idle
     await GameModel.updateMany(
       { _id: roomId },
       { $set: { "playerData.$[].state": "idle" } }
     );
+    // Set in game players to active.
     await GameModel.updateOne(
       { _id: roomId },
       { $set: { "playerData.$[elem].state": "active" } },
@@ -125,6 +137,7 @@ class GameInstance {
         ],
       }
     );
+    // Set current player
     await GameModel.updateOne(
       {
         _id: this.#roomId,
@@ -133,154 +146,25 @@ class GameInstance {
       { $set: { "playerData.$.state": "current" } }
     );
   }
-  async onUserEvent(userEvent, userId) {
-    if (userId != this.#playerData[this.currentPlayer].userId) {
-      console.log("Recieved event from another player. Ignoring event");
-      return;
-    }
-    // userEvent = {event:"bet/show/fold", value:""}
-    console.log("Player Action: ");
-    console.log(userEvent);
-    const event = userEvent.event;
-    switch (event) {
-      case "bet":
-        await this.bet(userEvent.value);
-        break;
-      case "show":
-        await this.show();
-        break;
-      case "fold":
-        await this.fold();
-        break;
-      default:
-        console.log("Unknown user action !!");
-    }
-  }
-  async bet(betAmount) {
-    // Update player data and pot data.
-    // Update currentPlayer.
-    await GameModel.updateOne(
-      {
-        _id: this.#roomId,
-        "playerData.userId": this.#playerData[this.currentPlayer].userId,
-      },
-      { $inc: { "playerData.$.balance": -betAmount } }
+  async startPot(roomId) {
+    // Take boot amount.
+    await Promise.all(
+      this.#playerData.map(async (player) => {
+        await GameModel.updateOne(
+          { _id: roomId, "playerData.userId": player.userId },
+          { $inc: { "playerData.$.balance": -this.#gameData.bootAmount } }
+        );
+      })
     );
+    // update pot
     await GameModel.updateOne(
-      {
-        _id: this.#roomId,
-        "playerData.userId": this.#playerData[this.currentPlayer].userId,
-      },
-      { $set: { "playerData.$.currentBet": betAmount } }
-    );
-    await GameModel.updateOne(
-      { _id: this.#roomId },
+      { _id: roomId },
       {
         $inc: {
-          potAmount: betAmount,
+          potAmount: this.#playerData.length * this.#gameData.bootAmount,
         },
       }
     );
-    await this.updateCurrentPlayer();
-  }
-  show() {
-    // Check if it is show or sideShow.
-    // Check comparison, declare winner.
-  }
-  async fold() {
-    // remove player. Update player state. Update PlayerData.
-    await GameModel.updateOne(
-      {
-        _id: this.#roomId,
-        "playerData.userId": this.#playerData[this.currentPlayer].userId,
-      },
-      { $set: { "playerData.$.state": "fold" } }
-    );
-    this.#playerData.splice(this.currentPlayer, 1);
-
-    await this.updateCurrentPlayer(true);
-  }
-  pauseGame() {
-    // remove interval
-    clearInterval(this.#interval);
-    this.#state = this.#GAME_STATE.paused;
-  }
-  async resetTimer() {
-    this.#timer = timerLimit;
-    await this.startGame();
-  }
-  async startGame() {
-    if (this.#state === this.#GAME_STATE.terminated) {
-      console.log("Have to setUp new Game");
-      await this.setupNewGame();
-    }
-    // set interval
-    this.#state = this.#GAME_STATE.active;
-    if (this.#interval) {
-      clearInterval(this.#interval);
-    }
-    this.#interval = setInterval(async () => {
-      if (this.#timerBeforeNewGame > 0) {
-        this.#timerBeforeNewGame--;
-        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
-      } else if (this.#timer > 0) {
-        this.#timer--;
-        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
-      } else {
-        console.log(`Timer ended for room: ${this.#roomId}`);
-        this.fold();
-        // await this.updateCurrentPlayer();
-        this.#timer = timerLimit;
-      }
-    }, 1000);
-    this.broadcastData();
-  }
-  async startNewGame() {
-    // this.#timerBeforeNewGame = timeBeforeNewGame;
-    // this.resetTimer();
-    if (this.#interval) {
-      clearInterval(this.#interval);
-    }
-    this.#state = this.#GAME_STATE.terminated;
-    setTimeout(async () => {
-      console.log("creating new game");
-      await this.resetTimer();
-    }, timeBeforeNewGame * 1000);
-  }
-  async updateCurrentPlayer(removeCurrentPlayer = false) {
-    if (!removeCurrentPlayer) {
-      await GameModel.updateMany(
-        {
-          _id: this.#roomId,
-          "playerData.userId": this.#playerData[this.currentPlayer].userId,
-        },
-        { $set: { "playerData.$.state": "active" } }
-      );
-      this.currentPlayer = (this.currentPlayer + 1) % this.#playerData.length;
-    } else {
-      this.currentPlayer = this.currentPlayer % this.#playerData.length;
-    }
-    if (this.#playerData.length == 1) {
-      await GameModel.updateMany(
-        {
-          _id: this.#roomId,
-          "playerData.userId": this.#playerData[this.currentPlayer].userId,
-        },
-        { $set: { "playerData.$.state": "winner" } }
-      );
-      this.broadcastData();
-      await this.startNewGame();
-      return;
-    }
-    await GameModel.updateMany(
-      {
-        _id: this.#roomId,
-        "playerData.userId": this.#playerData[this.currentPlayer].userId,
-      },
-      { $set: { "playerData.$.state": "current" } }
-    );
-    await this.broadcastData();
-    await this.resetTimer();
   }
   createAndShuffleArray(n) {
     // Create an array of size n
@@ -331,6 +215,221 @@ class GameInstance {
       })
     );
   }
+  async onUserEvent(userEvent, userId) {
+    if (userId != this.#playerData[this.currentPlayer].userId) {
+      console.log("Recieved event from another player. Ignoring event");
+      return;
+    }
+    // userEvent = {event:"bet/show/fold", value:""}
+    console.log("Player Action: ");
+    console.log(userEvent);
+    const event = userEvent.event;
+    switch (event) {
+      case "bet":
+        await this.bet(userEvent.value);
+        break;
+      case "show":
+        await this.show();
+        break;
+      case "fold":
+        await this.fold();
+        break;
+      default:
+        console.log("Unknown user action !!");
+    }
+  }
+  async bet(betAmount) {
+    // TODO: Apply checks to verify if bet is allowed.
+    //update balance
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $inc: { "playerData.$.balance": -betAmount } }
+    );
+    // update betAmount
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.currentBet": betAmount } }
+    );
+    // Update pot
+    await GameModel.updateOne(
+      { _id: this.#roomId },
+      {
+        $inc: {
+          potAmount: betAmount,
+        },
+      }
+    );
+    await this.updateCurrentPlayer("normal");
+  }
+  async show() {
+    // Check if it is show or sideShow.
+    // Check comparison, declare winner.
+    const leftPlayer =
+      (this.currentPlayer - 1 + this.#playerData.length) %
+      this.#playerData.length;
+    let cards1 = await this.getCards(leftPlayer);
+    let cards2 = await this.getCards(this.currentPlayer);
+    cards1 = cards1.map((card) => ({
+      suit: card.suit,
+      value: RANK_REVERSE_MAP[card.rank],
+    }));
+    cards2 = cards2.map((card) => ({
+      suit: card.suit,
+      value: RANK_REVERSE_MAP[card.rank],
+    }));
+    console.log(cards1);
+    console.log(cards2);
+    const comparison = compareHands(cards1, cards2);
+    if (comparison == 0 || comparison == 1) {
+      await this.fold();
+    } else {
+      await GameModel.updateOne(
+        {
+          _id: this.#roomId,
+          "playerData.userId": this.#playerData[leftPlayer].userId,
+        },
+        { $set: { "playerData.$.state": "fold" } }
+      );
+      await this.updateCurrentPlayer("previousFold");
+    }
+    console.log(comparison);
+  }
+  async getCards(player) {
+    const data = await GameModel.findOne(
+      {
+        _id: this.#roomId,
+      },
+      "playerData"
+    ).lean();
+    return data.playerData.filter(
+      (playerData) => playerData.userId == this.#playerData[player].userId
+    )[0].cards;
+  }
+  async fold() {
+    // Update player state.
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.state": "fold" } }
+    );
+
+    await this.updateCurrentPlayer("currentFold");
+  }
+  pauseGame() {
+    // remove interval
+    clearInterval(this.#interval);
+    this.#state = this.#GAME_STATE.paused;
+  }
+  async resetTimer() {
+    this.#timer = timerLimit;
+    await this.broadcastData();
+  }
+  async startGame() {
+    if (this.#state === this.#GAME_STATE.terminated) {
+      console.log("Have to setUp new Game");
+      this.#timer = timerLimit;
+      await this.setupNewGame();
+    }
+    // set interval
+    this.#state = this.#GAME_STATE.active;
+    if (this.#interval) {
+      clearInterval(this.#interval);
+    }
+    this.#interval = setInterval(async () => {
+      if (this.#timer > 0) {
+        this.#timer--;
+        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
+      } else {
+        console.log(`Timer ended for room: ${this.#roomId}`);
+        this.fold();
+        this.#timer = timerLimit;
+      }
+    }, 1000);
+    await this.broadcastData();
+  }
+  async startNewGame() {
+    this.pauseGame();
+    this.#state = this.#GAME_STATE.terminated;
+    setTimeout(async () => {
+      console.log("creating new game");
+      await this.startGame();
+    }, timeBeforeNewGame * 1000);
+  }
+  async updateCurrentPlayer(event) {
+    if (event == "normal") {
+      this.currentPlayer = (this.currentPlayer + 1) % this.#playerData.length;
+    } else if (event == "currentFold") {
+      this.#playerData.splice(this.currentPlayer, 1);
+      this.currentPlayer = this.currentPlayer % this.#playerData.length;
+    } else if (event == "previousFold") {
+      this.#playerData.splice(
+        (this.currentPlayer - 1 + this.#playerData.length) %
+        this.#playerData.length,
+        1
+      );
+      this.currentPlayer = this.currentPlayer % this.#playerData.length;
+    } else {
+      console.log("please provide correct event");
+      return;
+    }
+    if (this.#playerData.length == 1) {
+      await this.declareWinner();
+      return;
+    }
+    await this.setCurrentPlayer();
+    await this.broadcastData();
+    await this.resetTimer();
+  }
+  async setCurrentPlayer() {
+    await GameModel.updateOne(
+      { _id: this.#roomId },
+      { $set: { "playerData.$[elem].state": "active" } },
+      {
+        arrayFilters: [
+          {
+            "elem.userId": {
+              $in: this.#playerData.map((playerData) => playerData.userId),
+            },
+          },
+        ],
+      }
+    );
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $set: { "playerData.$.state": "current" } }
+    );
+  }
+  async declareWinner() {
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[0].userId,
+      },
+      { $set: { "playerData.$.state": "winner" } }
+    );
+    const potAmount = (await GameModel.findById(this.#roomId).lean()).potAmount;
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[0].userId,
+      },
+      { $inc: { "playerData.$.balance": potAmount } }
+    );
+    this.broadcastData();
+    await this.startNewGame();
+  }
+
   async broadcastData() {
     const updatedData = await GameModel.findById(this.#roomId).lean();
     updatedData.activePlayer = this.currentPlayer;
@@ -525,6 +624,7 @@ async function addNewPlayer(newPlayerData, roomId) {
 // Get Game Types
 app.get("/3patti/gameTypes", (req, res) => {
   try {
+    console.log("GameType request hit!")
     res.status(200).json({ gameTypes: Object.values(gameType) });
   } catch (e) {
     console.log(`Error while sending GameTypes. Error: ${e}`);

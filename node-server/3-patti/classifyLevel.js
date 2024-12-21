@@ -16,19 +16,11 @@ const getCardsWithAceHigh = (cards) => {
 };
 
 const getCardsValue = (cards) => {
-  return cards
-    .map((card) => {
-      card.value;
-    })
-    .sort();
+  return cards.map((card) => card.value).sort();
 };
 
 const getCardsSuit = (cards) => {
-  return cards
-    .map((card) => {
-      card.suit;
-    })
-    .sort();
+  return cards.map((card) => card.suit).sort();
 };
 
 const isTrail = (hand) => {

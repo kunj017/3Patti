@@ -59,7 +59,7 @@ export default function UserNameForm({ sendChangeToParent }) {
             onChange={(e) => {
               setUserName(e.target.value);
             }}
-            label="roomId"
+            label="userName"
             type="text"
             InputProps={{
               startAdornment: (
