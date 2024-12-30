@@ -411,6 +411,7 @@ class GameInstance {
     );
   }
   async declareWinner() {
+    // update state
     await GameModel.updateOne(
       {
         _id: this.#roomId,
@@ -418,6 +419,15 @@ class GameInstance {
       },
       { $set: { "playerData.$.state": "winner" } }
     );
+    // update numberOfWins
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[0].userId,
+      },
+      { $inc: { "playerData.$.numberOfWins": 1 } }
+    );
+    // Update balance
     const potAmount = (await GameModel.findById(this.#roomId).lean()).potAmount;
     await GameModel.updateOne(
       {

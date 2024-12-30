@@ -43,8 +43,6 @@ export default function GameArena({ socket }) {
   const playerBoxCenterWidth = "20%";
   const navBarColor = red[500];
   const numberOfPlayers = 8;
-  const numberOfCards = 3;
-  const currentPot = 100;
   const [timer, setTimer] = React.useState(0);
   const [userName, setUserName] = React.useState(
     localStorage.getItem("userName")
@@ -147,7 +145,6 @@ export default function GameArena({ socket }) {
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
     // Validate if room exists.
-
     axios
       .get(`http://localhost:4000/3patti/isValidGame`, {
         params: { roomId: roomId },
@@ -166,7 +163,6 @@ export default function GameArena({ socket }) {
           `error during fetching valid gameStatus. ErrorCode: ${err}`
         );
         navigate("/invalidRoom");
-
         return false;
       });
 
@@ -185,8 +181,6 @@ export default function GameArena({ socket }) {
       localStorage.setItem(
         roomId,
         JSON.stringify({
-          numberOfReJoins: 0,
-          numberOfWins: 1,
           userId: uuidv4(),
         })
       );
@@ -197,8 +191,6 @@ export default function GameArena({ socket }) {
     const newPlayerData = {
       roomId: roomId,
       userName: localStorage.getItem("userName"),
-      numberOfReJoins: roomDataInStorage.numberOfReJoins,
-      numberOfWins: roomDataInStorage.numberOfWins,
       userId: roomDataInStorage.userId,
     };
     socket.emit("joinRoom", newPlayerData);
