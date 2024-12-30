@@ -16,7 +16,7 @@ import {
   Divider,
   Card,
 } from "@mui/material";
-import { green, teal, lightGreen } from "@mui/material/colors";
+import { green, teal, lightGreen, red } from "@mui/material/colors";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
@@ -33,6 +33,7 @@ import UserNameForm from "./UserNameForm";
 import axios from "axios";
 import CardComponent from "./CardComponent";
 import ControllerComponent from "./ControllerComponent";
+import { minHeight } from "@mui/system";
 
 export default function GameArena({ socket }) {
   const { roomId } = useParams();
@@ -40,7 +41,7 @@ export default function GameArena({ socket }) {
   const playerBoxHeight = "90%";
   const playerBoxWidth = "20%";
   const playerBoxCenterWidth = "20%";
-  const navBarColor = green[800];
+  const navBarColor = red[500];
   const numberOfPlayers = 8;
   const numberOfCards = 3;
   const currentPot = 100;
@@ -382,7 +383,7 @@ export default function GameArena({ socket }) {
               size="large"
               edge="start"
               aria-label="menu"
-              sx={{ mr: 2, backgroundColor: "white" }}
+              sx={{ backgroundColor: "white" }}
               onClick={() => {
                 console.log("drawer set");
                 setDrawerState(true);
@@ -398,15 +399,12 @@ export default function GameArena({ socket }) {
                 alignItems: "center",
               }}
             >
-              <Avatar sx={{ mr: 1 }}>
-                <SportsEsportsIcon></SportsEsportsIcon>
-              </Avatar>
+              <SportsEsportsIcon fontSize="large"></SportsEsportsIcon>
               <Typography
-                variant="h6"
-                component="div"
-                sx={{ textAlign: "center" }}
+                variant="h5"
+                sx={{ textAlign: "center", ml: 1, fontWeight: "bold" }}
               >
-                3 Patti
+                3 PATTI
               </Typography>
             </Stack>
 
@@ -415,7 +413,7 @@ export default function GameArena({ socket }) {
                 size="large"
                 edge="start"
                 aria-label="menu"
-                sx={{ mr: 2, backgroundColor: "white" }}
+                sx={{ backgroundColor: "white" }}
                 onClick={() => {
                   console.log("drawer set");
                   setChatDrawerState(true);
@@ -432,7 +430,6 @@ export default function GameArena({ socket }) {
           sx={{
             height: "100%",
             width: "100%",
-            // position: "relative",
           }}
         >
           <div style={{ flexGrow: 1, position: "relative" }}>
@@ -496,7 +493,7 @@ export default function GameArena({ socket }) {
                 >
                   <Typography
                     variant="h4"
-                    sx={{ textAlign: "center" }}
+                    sx={{ textAlign: "center", fontWeight: 'bold' }}
                   >{`POT: ${gameData.potAmount}`}</Typography>
                 </Card>
                 <Box

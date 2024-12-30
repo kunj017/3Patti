@@ -31,10 +31,10 @@ export default function SeatComponent({
             isOccupied == false
               ? "grey"
               : state == "idle"
-              ? "blue"
-              : state == "fold"
-              ? "silver"
-              : "white",
+                ? "yellow"
+                : state == "fold"
+                  ? "silver"
+                  : "white",
         }}
       >
         <Stack

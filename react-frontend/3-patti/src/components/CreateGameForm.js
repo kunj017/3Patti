@@ -63,7 +63,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
           )} with room_id: ${room_id}`
         );
         if (res.data.success === "false") {
-          alert("provide valid input");
+          alert("Please provide valid input!!!");
         } else {
           sendChangeToParent(room_id);
           localStorage.setItem("userName", formData.userName);
@@ -71,7 +71,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
       })
       .catch((err) => {
         console.log(`Error during createGame. ErrorCode: ${err}`);
-        alert("provide valid input");
+        alert("Please provide valid input!!!");
       });
   };
   useEffect(() => {
@@ -95,6 +95,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
           flexDirection: "column",
           backgroundColor: "white",
           justifyContent: "center",
+          minWidth: "35%"
         }}
       >
         <CardHeader
@@ -103,9 +104,9 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
               style={{ color: "white" }}
             ></AddCircleOutlineIcon>
           }
-          title="Create a new game"
+          title="CREATE NEW GAME"
           disableTypography={false}
-          titleTypographyProps={{ variant: "h4", color: "white" }}
+          titleTypographyProps={{ variant: "h6", color: "white", fontWeight: "bold" }}
           sx={{
             textAlign: "left",
             backgroundColor: buttonColor,
@@ -185,12 +186,12 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
             name="gameType"
             value={formData.gameType}
             onChange={handleChange}
-            label="GameType"
+            label="Game Type"
             type="text"
           >
             {gameTypes.map((game, index) => {
               return (
-                <MenuItem key={index} value={game}>
+                <MenuItem key={index} value={game} sx={{ textTransform: "uppercase" }}>
                   {game}
                 </MenuItem>
               );
@@ -202,7 +203,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
             onClick={handleSubmit}
             style={{ backgroundColor: buttonColor }}
           >
-            Click Me
+            CREATE
           </Button>
         </Stack>
       </Card>

@@ -128,9 +128,8 @@ export default function HomePage({ socket }) {
       <Paper
         elevation={10}
         sx={{
-          backgroundColor: paperColor,
-          height: "80vh",
-          width: "80vw",
+          height: "85vh",
+          width: "85vw",
           borderColor: "green",
           position: "absolute",
           top: "50%",
@@ -151,14 +150,13 @@ export default function HomePage({ socket }) {
             direction="row"
             sx={{
               justifyContent: "center",
-              width: 1,
             }}
           >
-            <Avatar sx={{ height: 80, width: 80, mr: 2, bgcolor: buttonColor }}>
+            <Avatar sx={{ height: 70, width: 70, mr: 1.5, bgcolor: buttonColor }}>
               <SportsEsportsIcon fontSize="large"></SportsEsportsIcon>
             </Avatar>
             <Typography variant="h2" component="h1" sx={{ fontWeight: "bold" }}>
-              3 Patti
+              3 PATTI
             </Typography>
           </Stack>
 

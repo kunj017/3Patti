@@ -33,7 +33,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
   }
 
   return (
-    <>  
+    <>
       <Card
         raised={true}
         sx={{
@@ -50,9 +50,8 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
               style={{ color: "white" }}
             ></AddCircleOutlineIcon>
           }
-          title="Join a new game"
-          disableTypography={false}
-          titleTypographyProps={{ variant: "h6", color: "white" }}
+          title="JOIN GAME"
+          titleTypographyProps={{ variant: "h6", color: "white", fontWeight: "bold" }}
           sx={{
             textAlign: "left",
             backgroundColor: buttonColor,
@@ -63,9 +62,10 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
           <TextField
             required
             name="roomId"
+            placeholder="Enter a valid room ID"
             value={formData.userName}
             onChange={handleChange}
-            label="roomId"
+            label="room ID"
             type="text"
             InputProps={{
               startAdornment: (
@@ -81,7 +81,7 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
             onClick={handleSubmit}
             style={{ backgroundColor: buttonColor }}
           >
-            Click Me
+            JOIN
           </Button>
         </Stack>
       </Card>
