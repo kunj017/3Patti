@@ -21,6 +21,7 @@ const {
 const compareHands = (a, b) => {
   const levela = classifyLevel(a);
   const levelb = classifyLevel(b);
+  // console.log(`LevelA: ${levela} and LevelB: ${levelb}`);
 
   if (levela != levelb) return compareTwoNumbers(levela, levelb);
   if (levela == heirarchy.TRAIL) return compareTrail(a, b);

@@ -61,7 +61,7 @@ const compareColour = (a, b) => {
 
 function comparePair(a, b) {
   const modifyCards = (cards) => {
-    const modifiedCards = a
+    const modifiedCards = cards
       .map((card) => {
         if (card.value == 1) {
           return 14;
@@ -75,6 +75,7 @@ function comparePair(a, b) {
 
   const cardsa = modifyCards(a);
   const cardsb = modifyCards(b);
+  console.log(`Modified cards: ${cardsa}, ${cardsb}`);
 
   let paira = cardsa[0];
   if (cardsa[0] != cardsa[1]) paira = cardsa[2];

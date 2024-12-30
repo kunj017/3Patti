@@ -7,7 +7,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 export default function SeatComponent({
   numberOfWins,
-  numberOfReJoins,
+  totalAmount,
   currentBet,
   userName,
   currentBalance,
@@ -49,7 +49,7 @@ export default function SeatComponent({
             <EmojiEventsIcon></EmojiEventsIcon>
             <sup>{numberOfWins}</sup>
             <CurrencyRupeeIcon></CurrencyRupeeIcon>
-            <sup>{numberOfReJoins}</sup>
+            <sup>{totalAmount}</sup>
             <div style={{ flexGrow: 1 }}></div>
             <Typography
               variant="body2"

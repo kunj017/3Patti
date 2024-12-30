@@ -66,7 +66,7 @@ export default function GameArena({ socket }) {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
       userId: "",
       isOccupied: false,
-      numberOfReJoins: 0,
+      totalAmount: 0,
       numberOfWins: 0,
       balance: 0,
       currentBet: 0,
@@ -78,7 +78,7 @@ export default function GameArena({ socket }) {
   const minBet = Math.max(...playerData.map((data) => data.currentBet));
   const players = Array.from({ length: numberOfPlayers }, (_, i) => (
     <SeatComponent
-      numberOfReJoins={playerData[i].numberOfReJoins}
+      totalAmount={playerData[i].totalAmount}
       numberOfWins={playerData[i].numberOfWins}
       currentBet={playerData[i].currentBet}
       userName={playerData[i].userName}
@@ -220,7 +220,7 @@ export default function GameArena({ socket }) {
       // console.log(data.playerData)
       data.data.playerData.map((playerData, i) => {
         const {
-          numberOfReJoins,
+          totalAmount,
           numberOfWins,
           balance,
           currentBet,
@@ -230,7 +230,7 @@ export default function GameArena({ socket }) {
           userId,
         } = playerData;
         let newPlayerData = {
-          numberOfReJoins,
+          totalAmount,
           numberOfWins,
           balance,
           currentBet,
@@ -288,6 +288,9 @@ export default function GameArena({ socket }) {
     function resumeGame() {
       socket.emit("startGame", roomId);
     }
+    function addMoney() {
+      socket.emit("addMoney", roomId, currentPlayerUserId)
+    }
     const drawerList = (
       <Stack
         direction="column"
@@ -310,7 +313,7 @@ export default function GameArena({ socket }) {
           <PauseCircleIcon sx={{ mr: 1 }}></PauseCircleIcon>
           Pause
         </IconButton>
-        <IconButton onClick={() => { }}>
+        <IconButton onClick={() => { addMoney() }}>
           <AccountBalanceIcon sx={{ mr: 1 }}></AccountBalanceIcon>
           Add Money
         </IconButton>

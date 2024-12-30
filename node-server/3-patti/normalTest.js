@@ -1,24 +1,28 @@
 const compareHands = require("./variations/normal");
 
 const SUITS = ["diamond", "heart", "club", "spade"];
-for (let i = 0; i < 100; i++) {
-  const cards1 = Array.from({ length: 3 }, (_, i) => ({
-    value: Math.floor(13 * Math.random()) + 1,
-    // suit: SUITS[Math.floor(4 * Math.random())],
-    suit: SUITS[i],
-  }));
+// for (let i = 0; i < 100; i++) {
+//   const cards1 = Array.from({ length: 3 }, (_, i) => ({
+//     value: Math.floor(13 * Math.random()) + 1,
+//     // suit: SUITS[Math.floor(4 * Math.random())],
+//     suit: SUITS[i],
+//   }));
 
-  const cards2 = Array.from({ length: 3 }, (_, i) => ({
-    value: Math.floor(13 * Math.random()) + 1,
-    // suit: SUITS[Math.floor(4 * Math.random())],
-    suit: SUITS[i],
-  }));
+//   const cards2 = Array.from({ length: 3 }, (_, i) => ({
+//     value: Math.floor(13 * Math.random()) + 1,
+//     // suit: SUITS[Math.floor(4 * Math.random())],
+//     suit: SUITS[i],
+//   }));
 
-  console.log(cards1);
-  console.log(cards2);
+//   console.log(cards1);
+//   console.log(cards2);
 
-  console.log(compareHands(cards1, cards2));
-}
+//   console.log(compareHands(cards1, cards2));
+// }
+
+hand1 = [{ value: 7, suit: "diamond" }, { value: 13, suit: "diamond" }, { value: 7, suit: "heart" }];
+hand2 = [{ value: 6, suit: "spade" }, { value: 6, suit: "heart" }, { value: 1, suit: "heart" }];
+console.log(compareHands(hand1, hand2));
 
 // [
 //     { value: 9, suit: 'club' },

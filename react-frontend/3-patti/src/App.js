@@ -54,7 +54,7 @@ function App() {
         path="seat"
         element={
           <SeatComponent
-            numberOfReJoins={1}
+            totalAmount={1}
             numberOfWins={2}
             currentBet={40}
             userName={"kunj"}

@@ -410,6 +410,16 @@ class GameInstance {
       { $set: { "playerData.$.state": "current" } }
     );
   }
+  async addMoney(userId) {
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[0].userId,
+      },
+      { $inc: { "playerData.$.totalAmount": this.#gameData.entryAmount, "playerData.$.balance": this.#gameData.entryAmount } }
+    );
+    this.broadcastData();
+  }
   async declareWinner() {
     // update state
     await GameModel.updateOne(
@@ -516,11 +526,15 @@ socketIO.on("connection", (socket) => {
   const onResetTimer = async (roomId) => {
     gameInstances[roomId].resetTimer();
   };
+  const handleAddMoney = async (roomId, userId) => {
+    gameInstances[roomId].addMoney(userId);
+  }
   socket.on("startGame", onStartGame);
   socket.on("pauseGame", onPauseGame);
   socket.on("playerAction", onPlayerAction);
   socket.on("resetTimer", onResetTimer);
   socket.on("joinRoom", handleJoinRoom);
+  socket.on("addMoney", handleAddMoney);
 });
 
 // Function to check if data exists by ID
@@ -614,6 +628,7 @@ async function addNewPlayer(newPlayerData, roomId) {
       }
       newPlayerData.seatNumber = seatNumber;
       newPlayerData.balance = entryAmount;
+      newPlayerData.totalAmount = entryAmount;
       const newPlayer = await PlayerDataModel.create(newPlayerData);
       await GameModel.findByIdAndUpdate(
         roomId, // ID of the document to update

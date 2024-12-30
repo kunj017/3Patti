@@ -37,7 +37,7 @@ const PlayerDataSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  numberOfReJoins: {
+  totalAmount: {
     type: Number,
     default: 0,
   },
@@ -87,14 +87,6 @@ const GameSchema = new mongoose.Schema({
   },
   playerData: {
     type: [PlayerDataSchema],
-    // default: [
-    //   {
-    //     userId: "testing",
-    //     seatNumber: Math.floor(Math.random() * 8),
-    //     userName: "Kunj",
-    //     balance: 100,
-    //   },
-    // ],
   },
 });
 
