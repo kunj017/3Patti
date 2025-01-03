@@ -9,24 +9,44 @@ import {
 import React, { useEffect } from "react";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-
+/**
+ * Controller component for user actions like bet, show/side show and fold.
+ * 1. Bet slider has to start with current bet.
+ * 2. Bet slider can not exceed player's balance, max bet value, and twice of current bet.
+ * 3. Side show will happen at current bet value.
+ * 4. Show/side show to show based on number of players.
+ * @param socket Socket object. 
+ * @param roomId Room Id. 
+ * @param playerBalance Current player's balance. 
+ * @param canShow Is show allowed. 
+ * @param isActive Is current player active. 
+ * @param currentBet Current Bet for room. 
+ * @param bootAmount Minimum bet for room. 
+ * @param maxBet Max bet for room. 
+ * @returns Controller component to control user actions.
+ */
 export default function ControllerComponent({
   socket,
   roomId,
   playerBalance,
   canShow,
   isActive,
-  minBet,
+  currentBet,
+  bootAmount,
+  maxBet
 }) {
-  const betIncrement = 5;
   const [bet, setBet] = React.useState(0);
-  const [customState, setCustomState] = React.useState(false);
-  function onPlayerAction(playerAction) {
-    socket.emit("playerAction", { roomId: roomId, action: playerAction });
+  function onPlayerAction(event) {
+    if (event === "bet") {
+      socket.emit("playerAction", { roomId: roomId, action: { event: event, value: bet } });
+    } else {
+      socket.emit("playerAction", { roomId: roomId, action: { event: event } });
+    }
   }
   useEffect(() => {
-    setBet((prevBet) => minBet);
-  }, [minBet]);
+    console.log(`playerBalance: ${playerBalance}, canShow: ${canShow}, currentBet: ${currentBet}, bootAmount: ${bootAmount}, maxBet: ${maxBet}`)
+    setBet((prevBet) => Math.max(bootAmount, currentBet));
+  }, [currentBet]);
   return (
     <>
       <Stack
@@ -44,18 +64,18 @@ export default function ControllerComponent({
             <Button
               variant="contained"
               onClick={() => {
-                onPlayerAction({ event: "bet", value: bet });
+                onPlayerAction("bet");
               }}
-              disabled={!isActive}
+              disabled={!isActive || playerBalance < currentBet}
             >{`Bet: ${bet}`}</Button>
             <Stack direction="row"></Stack>
           </Stack>
           <Slider
-            value={Math.max(bet, minBet)}
+            value={bet}
             valueLabelDisplay="auto"
-            min={minBet}
-            max={Math.min(2 * minBet, playerBalance)}
-            step={betIncrement}
+            min={Math.max(currentBet, bootAmount)}
+            max={Math.min(2 * currentBet, playerBalance, maxBet)}
+            step={bootAmount}
             onChange={(event) => {
               setBet(event.target.value);
             }}
@@ -66,7 +86,7 @@ export default function ControllerComponent({
         <Button
           variant="contained"
           onClick={() => {
-            onPlayerAction({ event: "show" });
+            onPlayerAction("show");
           }}
           disabled={!isActive}
         >
@@ -76,7 +96,7 @@ export default function ControllerComponent({
         <Button
           variant="contained"
           onClick={() => {
-            onPlayerAction({ event: "fold" });
+            onPlayerAction("fold");
           }}
           disabled={!isActive}
         >

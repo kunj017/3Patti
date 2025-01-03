@@ -53,6 +53,18 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
       alert("Please select a game type!!!");
       return;
     }
+    if (formData.entryAmount == 0) {
+      alert("Please select a positive entry amount!!!");
+      return;
+    }
+    if (formData.bootAmount == 0) {
+      alert("Please select a positive boot amount!!!");
+      return;
+    }
+    if (formData.maxBet == 0 || formData.maxBet < formData.bootAmount) {
+      alert("Please select a valid max bet!!!");
+      return;
+    }
     const postData = {
       entryAmount: formData.entryAmount,
       bootAmount: formData.bootAmount,
