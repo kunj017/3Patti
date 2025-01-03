@@ -19,7 +19,6 @@ import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 export default function CreateGameForm({ socket, sendChangeToParent }) {
   // Theme
   const buttonColor = red[600];
-  const [error, setError] = useState(false);
   const [gameTypes, setGameTypes] = useState(["Hello"]);
   const [formData, setFormData] = useState({
     userName: "",
@@ -46,6 +45,14 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
   const handleSubmit = () => {
     console.log("submit called");
     console.log(formData);
+    if (formData.userName.length == 0) {
+      alert("User Name can not be empty!!!");
+      return;
+    }
+    if (formData.gameType == "") {
+      alert("Please select a game type!!!");
+      return;
+    }
     const postData = {
       entryAmount: formData.entryAmount,
       bootAmount: formData.bootAmount,
@@ -79,8 +86,12 @@ export default function CreateGameForm({ socket, sendChangeToParent }) {
     axios
       .get("http://localhost:4000/3patti/gameTypes")
       .then((res) => {
-        console.log(res.data.gameTypes);
-        setGameTypes(res.data.gameTypes);
+        try {
+          setGameTypes(res.data.gameTypes);
+        }
+        catch (err) {
+          console.log(`error during getGameTypes. ErrorCode: ${err}, Response: ${res}`);
+        }
       })
       .catch((err) => {
         console.log(`error during getGameTypes. ErrorCode: ${err}`);
