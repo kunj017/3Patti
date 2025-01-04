@@ -229,7 +229,7 @@ class GameInstance {
         await this.bet(userEvent.value);
         break;
       case "show":
-        await this.show();
+        await this.show(userEvent.value);
         break;
       case "fold":
         await this.fold();
@@ -267,7 +267,24 @@ class GameInstance {
     );
     await this.updateCurrentPlayer("normal");
   }
-  async show() {
+  async show(showAmount) {
+    // Update balance.
+    await GameModel.updateOne(
+      {
+        _id: this.#roomId,
+        "playerData.userId": this.#playerData[this.currentPlayer].userId,
+      },
+      { $inc: { "playerData.$.balance": -showAmount } }
+    );
+    // Update pot
+    await GameModel.updateOne(
+      { _id: this.#roomId },
+      {
+        $inc: {
+          potAmount: showAmount,
+        },
+      }
+    );
     // Check if it is show or sideShow.
     // Check comparison, declare winner.
     const leftPlayer =

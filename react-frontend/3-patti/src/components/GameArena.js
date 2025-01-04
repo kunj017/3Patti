@@ -52,7 +52,7 @@ export default function GameArena({ socket }) {
   const [showChat, setShowChat] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
-  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState("");
+  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState(JSON.parse(localStorage.getItem(roomId)).userId);
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
@@ -245,6 +245,7 @@ export default function GameArena({ socket }) {
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
         // set currentPlayerSeat
+        console.log(`Current player userId: ${currentPlayerUserId}`);
         if (playerData.userId == currentPlayerUserId) {
           setCurrentPlayerSeat((prevSeat) => seatNumber);
           console.log(`CurrentPlayer Seat: ${seatNumber}`);
