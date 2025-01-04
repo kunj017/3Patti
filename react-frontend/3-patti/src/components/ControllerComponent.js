@@ -39,6 +39,8 @@ export default function ControllerComponent({
   function onPlayerAction(event) {
     if (event === "bet") {
       socket.emit("playerAction", { roomId: roomId, action: { event: event, value: bet } });
+    } else if (event === "show") {
+      socket.emit("playerAction", { roomId: roomId, action: { event: event, value: currentBet } });
     } else {
       socket.emit("playerAction", { roomId: roomId, action: { event: event } });
     }
@@ -68,7 +70,6 @@ export default function ControllerComponent({
               }}
               disabled={!isActive || playerBalance < currentBet}
             >{`Bet: ${bet}`}</Button>
-            <Stack direction="row"></Stack>
           </Stack>
           <Slider
             value={bet}
@@ -90,7 +91,7 @@ export default function ControllerComponent({
           }}
           disabled={!isActive}
         >
-          {canShow ? "Show" : "Side Show"}
+          {canShow ? "Show" : "Side Show"}{` : ${currentBet}`}
         </Button>
         {/* <Divider orientation="vertical" flexItem /> */}
         <Button

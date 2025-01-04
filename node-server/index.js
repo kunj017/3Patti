@@ -414,7 +414,7 @@ class GameInstance {
     await GameModel.updateOne(
       {
         _id: this.#roomId,
-        "playerData.userId": this.#playerData[0].userId,
+        "playerData.userId": userId,
       },
       { $inc: { "playerData.$.totalAmount": this.#gameData.entryAmount, "playerData.$.balance": this.#gameData.entryAmount } }
     );

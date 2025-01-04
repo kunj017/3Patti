@@ -52,7 +52,7 @@ export default function GameArena({ socket }) {
   const [showChat, setShowChat] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
-  let currentPlayerUserId = null;
+  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState("");
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
@@ -144,6 +144,7 @@ export default function GameArena({ socket }) {
 
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
+    console.log(`userId: ${currentPlayerUserId}`);
     // Validate if room exists.
     axios
       .get(`http://localhost:4000/3patti/isValidGame`, {
@@ -181,12 +182,12 @@ export default function GameArena({ socket }) {
       localStorage.setItem(
         roomId,
         JSON.stringify({
-          userId: uuidv4(),
+          userId: uuidv4()
         })
       );
     }
-    currentPlayerUserId = JSON.parse(localStorage.getItem(roomId)).userId;
-
+    setCurrentPlayerUserId((prevId) => (JSON.parse(localStorage.getItem(roomId)).userId));
+    console.log(`userId: ${currentPlayerUserId}`);
     const roomDataInStorage = JSON.parse(localStorage.getItem(roomId));
     const newPlayerData = {
       roomId: roomId,
@@ -288,8 +289,9 @@ export default function GameArena({ socket }) {
     function resumeGame() {
       socket.emit("startGame", roomId);
     }
-    function addMoney() {
-      socket.emit("addMoney", roomId, currentPlayerUserId)
+    const addMoney = () => {
+      socket.emit("addMoney", roomId, currentPlayerUserId);
+      console.log(`Add money called for ${currentPlayerUserId}`);
     }
     const drawerList = (
       <Stack
