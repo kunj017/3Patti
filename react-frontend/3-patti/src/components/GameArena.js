@@ -125,6 +125,7 @@ export default function GameArena({ socket }) {
       </Modal>
     );
   };
+
   useEffect(() => {
     if (showChat || chatDrawerState) {
       setUnreadMessages((prevCount) => (0));
@@ -440,6 +441,7 @@ export default function GameArena({ socket }) {
           sx={{
             height: "100%",
             width: "100%",
+            overflow: "auto"
           }}
         >
           <div style={{ flexGrow: 1, position: "relative" }}>
