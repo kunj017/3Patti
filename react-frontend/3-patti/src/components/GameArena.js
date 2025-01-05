@@ -15,6 +15,7 @@ import {
   Drawer,
   Divider,
   Card,
+  Badge
 } from "@mui/material";
 import { green, teal, lightGreen, red } from "@mui/material/colors";
 import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
@@ -48,11 +49,12 @@ export default function GameArena({ socket }) {
     localStorage.getItem("userName")
   );
   const [openUserNameModal, setOpenUserNameModal] = React.useState(false);
+  const [unreadMessages, setUnreadMessages] = React.useState(0);
   const [chatList, setChatList] = React.useState([]);
   const [showChat, setShowChat] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
-  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState(JSON.parse(localStorage.getItem(roomId)).userId);
+  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState(JSON.parse(localStorage.getItem(roomId))?.userId);
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
@@ -123,10 +125,18 @@ export default function GameArena({ socket }) {
       </Modal>
     );
   };
-
+  useEffect(() => {
+    if (showChat || chatDrawerState) {
+      setUnreadMessages((prevCount) => (0));
+      console.log(`Messages set to 0.`)
+    }
+  }, [showChat, chatDrawerState])
   useEffect(() => {
     const onNewMessage = (newMessage) => {
-      console.log(`newMessage recieved: ${newMessage}`);
+      if (!chatDrawerState && !showChat) {
+        setUnreadMessages((prevCount) => (prevCount + 1));
+        console.log(`New message`)
+      }
       setChatList((prevChatList) => [
         ...prevChatList,
         {
@@ -140,7 +150,7 @@ export default function GameArena({ socket }) {
     return () => {
       socket.off("newMessage", onNewMessage);
     };
-  }, []);
+  }, [showChat, chatDrawerState]);
 
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
@@ -407,18 +417,20 @@ export default function GameArena({ socket }) {
             </Stack>
 
             {!showChat && (
-              <IconButton
-                size="large"
-                edge="start"
-                aria-label="menu"
-                sx={{ backgroundColor: "white" }}
-                onClick={() => {
-                  console.log("drawer set");
-                  setChatDrawerState(true);
-                }}
-              >
-                <ChatIcon />
-              </IconButton>
+              <Badge badgeContent={unreadMessages} color="primary">
+                <IconButton
+                  size="large"
+                  edge="start"
+                  aria-label="menu"
+                  sx={{ backgroundColor: "white" }}
+                  onClick={() => {
+                    console.log("drawer set");
+                    setChatDrawerState(true);
+                  }}
+                >
+                  <ChatIcon />
+                </IconButton>
+              </Badge>
             )}
           </Toolbar>
         </AppBar>
