@@ -24,6 +24,7 @@ export default function SharedChatComponent({
     userName: currentUserName,
   });
   function sendMessage() {
+    if (message.content.length == 0) return;
     setChatList((prevChatList) => [
       ...prevChatList,
       { fromSelf: true, content: message.content, userName: currentUserName },
@@ -110,6 +111,7 @@ export default function SharedChatComponent({
             ></TextField>
             <Button
               variant="contained"
+              disabled={message.content.length == 0}
               onClick={() => {
                 sendMessage();
               }}
