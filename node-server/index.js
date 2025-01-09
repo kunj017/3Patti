@@ -6,6 +6,7 @@ const testingRoute = require("./routes/testingRoute");
 const cors = require("cors");
 const { gameType } = require("./3-patti/enums");
 const { createGame } = require("./controller/createGame");
+const { isValidRoomId, getRoomData, removePlayer, addNewPlayer } = require("./controller/room")
 const { GameModel, PlayerDataModel, CardDataModel } = require("./models/game");
 const { Socket } = require("socket.io");
 const compareHands = require("./3-patti/variations/normal");
@@ -72,7 +73,9 @@ const RANK_REVERSE_MAP = {
 // TODO: Move this class to a new file.
 
 /**
- * This holds a snapshot of a room and manages its data. Always call setupNewGame() to create a new instance.
+ * This holds a snapshot of a room and manages its data. 
+ * 
+ * Always call init() while creating a new instance.
  * 
  * Data required:
  * 1. Room Id
@@ -98,16 +101,33 @@ class GameInstance {
   constructor(roomId) {
     this.#roomId = roomId;
   }
+  async init() {
+    await this.#fetchGameData();
+  }
   // TODO: Convert all functions to use class members directly.
   async setupNewGame() {
-    await this.fetchGameData(this.#roomId);
+    await this.#fetchGameData()
     await this.resetGameData(this.#roomId);
     await this.startPot(this.#roomId);
     await this.distributeCards(this.#roomId, this.#playerData);
     await this.broadcastData();
   }
-  async fetchGameData(roomId) {
-    this.#gameData = await GameModel.findOne({ _id: roomId }).lean();
+  /**Adds a player into the room. Please make sure to call broadcast data when connection is complete.
+   * 
+   * @param newPlayerData Object for the new player data.
+   * @returns {Promise<Boolean>} Whether player was added successfully or not.
+   */
+  async addNewPlayer(newPlayerData) {
+    try {
+      let status = await addNewPlayer(newPlayerData, this.#roomId)
+      return status
+    } catch (err) {
+      console.log(`Error while adding a new player: ${err}`)
+      return false
+    }
+  }
+  async #fetchGameData() {
+    this.#gameData = await GameModel.findOne({ _id: this.#roomId }).lean();
     this.#playerData = this.#gameData.playerData;
   }
   async resetGameData(roomId) {
@@ -138,6 +158,9 @@ class GameInstance {
       }
     );
     // Set current player
+    console.log("Creating new game: All data: ")
+    console.log(this.#gameData)
+    console.log(this.#playerData)
     await GameModel.updateOne(
       {
         _id: this.#roomId,
@@ -468,7 +491,8 @@ class GameInstance {
   }
 
   async broadcastData() {
-    const updatedData = await GameModel.findById(this.#roomId).lean();
+    await this.#fetchGameData();
+    const updatedData = this.#gameData
     updatedData.activePlayer = this.currentPlayer;
     console.log("updated game data: ");
     console.log(updatedData);
@@ -481,34 +505,36 @@ class GameInstance {
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
   const handleJoinRoom = async (newUserData) => {
-    console.log("Join room called");
-    const response = { success: true };
-    const roomId = newUserData.roomId;
-    if (!gameInstances[roomId]) {
-      const gameInstance = new GameInstance(roomId);
-      gameInstances[roomId] = gameInstance;
+    try {
+      console.log("Join room called");
+      const response = { success: true };
+      const roomId = newUserData.roomId;
+      const isValidRoom = await isValidRoomId(roomId);
+      if (!isValidRoom) {
+        response.success = false;
+      } else {
+        if (!gameInstances[roomId]) {
+          const gameInstance = new GameInstance(roomId);
+          await gameInstance.init();
+          gameInstances[roomId] = gameInstance;
+        }
+        const addPlayerStatus = await gameInstances[roomId].addNewPlayer(newUserData);
+        response.success = addPlayerStatus
+      }
+      if (response.success) {
+        socket.join(roomId);
+        socket.userId = newUserData.userId;
+        gameInstances[roomId].broadcastData();
+      }
+    } catch (err) {
+      console.log(`Error while joining room: ${err}`);
     }
-
-    const isValidRoom = await isValidRoomId(roomId);
-    if (!isValidRoom) {
-      response.success = false;
-    } else {
-      const playerAdded = await addNewPlayer(newUserData, roomId);
-    }
-
-    if (response.success) {
-      response.data = await getRoomData(roomId);
-      socket.join(roomId);
-      socket.userId = newUserData.userId;
-    }
-
-    socketIO.to(roomId).emit("updateGameData", response);
   };
 
   const onStartGame = async (roomId) => {
     console.log(`StartGame called for roomId: ${roomId}`);
 
-    gameInstances[roomId].startGame();
+    await gameInstances[roomId].startGame();
   };
   const onPlayerAction = async (req) => {
     await gameInstances[req.roomId].onUserEvent(req.action, socket.userId);
@@ -544,127 +570,16 @@ socketIO.on("connection", (socket) => {
     console.log(`🔥: ${socket.id} A user disconnecting`);
     console.log(socket.rooms);
   });
+  socket.on("joinRoom", handleJoinRoom);
+  socket.on("startGame", onStartGame);
   socket.on("removePlayer", handleRemovePlayer);
   socket.on("newMessage", handleNewMessage);
-  socket.on("startGame", onStartGame);
   socket.on("pauseGame", onPauseGame);
   socket.on("playerAction", onPlayerAction);
   socket.on("resetTimer", onResetTimer);
-  socket.on("joinRoom", handleJoinRoom);
   socket.on("addMoney", handleAddMoney);
 });
 
-// Function to check if data exists by ID
-async function isValidRoomId(id) {
-  try {
-    // Check if a document with the given ID exists
-    const data = await GameModel.exists({ _id: id });
-    if (data) {
-      return true; // Return the data if found
-    } else {
-      console.log("No data found with the given ID");
-      return false; // Return null if no data is found
-    }
-  } catch (error) {
-    console.error("Error fetching data by ID:", error);
-    throw error;
-  }
-}
-
-async function findSeatNumber(roomId) {
-  try {
-    const playerData = await GameModel.findOne(
-      { _id: roomId },
-      "playerData"
-    ).lean();
-
-    const seatsOccupied = playerData.playerData.map(
-      (playerData) => playerData.seatNumber
-    );
-    seatsOccupied.sort();
-    let availableSeat = 8;
-    for (let i = 0; i < 8; i++) {
-      if (!seatsOccupied.includes(i)) {
-        availableSeat = i;
-        break;
-      }
-    }
-    console.log(
-      `Seats Occupied for RoomId: ${roomId}: [${seatsOccupied}. Available Seat: ${availableSeat}]`
-    );
-    return availableSeat;
-  } catch (err) {
-    console.log(`Error while finding seatNumber: ${err}`);
-  }
-}
-
-// TODO implement this after sessions are implemented for clients.
-async function isPlayerAlreadyPresent(roomId, userId) {
-  const data = await GameModel.findById(roomId).lean();
-  return data.playerData
-    .map((playerData) => playerData.userId)
-    .includes(userId);
-}
-async function getRoomData(roomId) {
-  const roomData = await GameModel.findOne({ _id: roomId });
-  console.log(roomData);
-  return roomData;
-}
-async function removePlayer(playerId, roomId) {
-  try {
-    await GameModel.updateOne(
-      { _id: roomId }, // ID of the document to update
-      { $pull: { playerData: { userId: playerId } } } // Use $push to add 'new-tag' to the 'tags' array
-    );
-  } catch (err) {
-    console.log(
-      `Error while removing player: ${playerId} from room: ${roomId}`
-    );
-  }
-}
-async function addNewPlayer(newPlayerData, roomId) {
-  try {
-    const seatNumber = await findSeatNumber(roomId);
-    const isDuplicatePlayer = await isPlayerAlreadyPresent(
-      roomId,
-      newPlayerData.userId
-    );
-    if (isDuplicatePlayer) {
-      console.log(`Player is already Present!`);
-      return true;
-    } else if (seatNumber > 7) {
-      // Return something to client
-      console.log(`Room is full!!`);
-      return false;
-    } else {
-      const data = await GameModel.findOne({ _id: roomId }).lean();
-      const entryAmount = data.entryAmount;
-      if (entryAmount == null) {
-        console.log(`Error while getting EntryAmount!`);
-        return false;
-      }
-      console.log(`AddNewPlayer: ${newPlayerData}`)
-      console.log(newPlayerData);
-      newPlayerData.seatNumber = seatNumber;
-      newPlayerData.balance = newPlayerData.balance ?? entryAmount;
-      newPlayerData.totalAmount = newPlayerData.totalAmount ?? entryAmount;
-      const newPlayer = await PlayerDataModel.create(newPlayerData);
-      await GameModel.findByIdAndUpdate(
-        roomId, // ID of the document to update
-        { $push: { playerData: newPlayer } }, // Use $push to add 'new-tag' to the 'tags' array
-        { new: true } // Optionally return the updated document
-      )
-        .then((res) => {
-          return true;
-        })
-        .catch((err) => {
-          console.log(`Error while adding new player: ${err}`);
-        });
-    }
-  } catch (err) {
-    console.log(`Error while adding new Player: ${err}`);
-  }
-}
 // Get Game Types
 app.get("/3patti/gameTypes", (req, res) => {
   try {

@@ -92,4 +92,4 @@ const GameSchema = new mongoose.Schema({
 
 // hey theere
 const GameModel = mongoose.model("3-patti-game", GameSchema);
-module.exports = { GameModel, PlayerDataModel, CardDataModel };
+module.exports = { GameModel, PlayerDataModel, CardDataModel, GameSchema };
