@@ -7,8 +7,9 @@ import {
   Divider,
 } from "@mui/material";
 import React, { useEffect } from "react";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import TimerOffOutlinedIcon from "@mui/icons-material/TimerOffOutlined";
+import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
+
 /**
  * Controller component for user actions like bet, show/side show and fold.
  * 1. Bet slider has to start with current bet.
@@ -23,6 +24,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
  * @param currentBet Current Bet for room. 
  * @param bootAmount Minimum bet for room. 
  * @param maxBet Max bet for room. 
+ * @param timer Clock Timer.
  * @returns Controller component to control user actions.
  */
 export default function ControllerComponent({
@@ -33,7 +35,8 @@ export default function ControllerComponent({
   isActive,
   currentBet,
   bootAmount,
-  maxBet
+  maxBet,
+  timer,
 }) {
   const [bet, setBet] = React.useState(0);
   function onPlayerAction(event) {
@@ -103,6 +106,20 @@ export default function ControllerComponent({
         >
           Fold
         </Button>
+        <Stack direction="row" sx={{ alignItems: "center", marginLeft: 2 }}>
+          {timer > 0 ? (
+            <TimerOutlinedIcon
+              variant="contained"
+              fontSize="large"
+              sx={{
+                color: timer > 10 ? "black" : "red",
+              }}
+            ></TimerOutlinedIcon>
+          ) : (
+            <TimerOffOutlinedIcon fontSize="large"></TimerOffOutlinedIcon>
+          )}
+          <div>{timer}</div>
+        </Stack>
       </Stack>
     </>
   );

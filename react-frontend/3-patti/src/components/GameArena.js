@@ -18,11 +18,9 @@ import {
   Badge
 } from "@mui/material";
 import { green, teal, lightGreen, red } from "@mui/material/colors";
-import TimerOutlinedIcon from "@mui/icons-material/TimerOutlined";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
-import TimerOffOutlinedIcon from "@mui/icons-material/TimerOffOutlined";
 import Grid from "@mui/material/Unstable_Grid2";
 import MenuIcon from "@mui/icons-material/Menu";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
@@ -588,22 +586,8 @@ export default function GameArena({ socket }) {
                   currentBet={minBet}
                   bootAmount={gameData.bootAmount}
                   maxBet={gameData.maxBet}
+                  timer={timer}
                 ></ControllerComponent>
-
-                <Stack direction="row" sx={{ alignItems: "center" }}>
-                  {timer > 0 ? (
-                    <TimerOutlinedIcon
-                      variant="contained"
-                      fontSize="large"
-                      sx={{
-                        color: timer > 10 ? "black" : "red",
-                      }}
-                    ></TimerOutlinedIcon>
-                  ) : (
-                    <TimerOffOutlinedIcon fontSize="large"></TimerOffOutlinedIcon>
-                  )}
-                  <div>{timer}</div>
-                </Stack>
               </Stack>
             </Stack>
           </div>
