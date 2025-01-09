@@ -19,6 +19,7 @@ export default function SharedChatComponent({
   setChatList,
   currentUserName,
 }) {
+  const chatbox = React.useRef(null);
   const [message, setMessage] = React.useState({
     content: "",
     userName: currentUserName,
@@ -45,10 +46,9 @@ export default function SharedChatComponent({
     });
   }
   React.useEffect(() => {
-    console.log(`useEffect called`);
-    // to always show the last message
-    const chatbox = document.getElementById("chatbox");
-    chatbox.scrollTop = chatbox.scrollHeight + 1;
+    console.log(`useEffect called for chatlist update`);
+    if (chatbox.current)
+      chatbox.current.scrollTop = chatbox.current.scrollHeight + 1;
   }, [chatList]);
 
   return (
@@ -81,6 +81,7 @@ export default function SharedChatComponent({
           </Stack>
           <Box
             id="chatbox"
+            ref={chatbox}
             sx={{
               height: "100%",
               overflowY: "scroll",

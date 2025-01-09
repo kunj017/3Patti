@@ -608,14 +608,14 @@ export default function GameArena({ socket }) {
             </Stack>
           </div>
           <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
-            <Stack direction="column" sx={{ height: "100%" }}>
+            <div style={{ height: "100%" }}>
               <SharedChatComponent
                 socket={socket}
                 chatList={chatList}
                 setChatList={setChatList}
                 currentUserName={userName}
               ></SharedChatComponent>
-            </Stack>
+            </div>
           </div>
         </Stack>
       </Stack >
