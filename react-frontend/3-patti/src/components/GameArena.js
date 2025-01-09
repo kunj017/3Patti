@@ -54,7 +54,7 @@ export default function GameArena({ socket }) {
   const [showChat, setShowChat] = React.useState(false);
   const [drawerState, setDrawerState] = React.useState(false);
   const [chatDrawerState, setChatDrawerState] = React.useState(false);
-  const [currentPlayerUserId, setCurrentPlayerUserId] = React.useState(JSON.parse(localStorage.getItem(roomId))?.userId);
+  const currentPlayerData = React.useRef(null);
   const [currentPlayerSeat, setCurrentPlayerSeat] = React.useState(0);
   const [gameData, setGameData] = React.useState({
     entryAmount: 0,
@@ -155,7 +155,7 @@ export default function GameArena({ socket }) {
 
   useEffect(() => {
     console.log(`Room Id: ${roomId}`);
-    console.log(`userId: ${currentPlayerUserId}`);
+    console.log(`userId: ${currentPlayerData.current?.userId}`);
     // Validate if room exists.
     axios
       .get(`http://localhost:4000/3patti/isValidGame`, {
@@ -186,24 +186,24 @@ export default function GameArena({ socket }) {
       console.log(`UserName: ${userName}`);
       return;
     }
-
     console.log(`After userName`);
+
     if (!localStorage.getItem(roomId)) {
       console.log(`Local storage does not exist for roomId: ${roomId}`);
       localStorage.setItem(
         roomId,
         JSON.stringify({
-          userId: uuidv4()
+          userId: uuidv4(),
         })
       );
     }
-    setCurrentPlayerUserId((prevId) => (JSON.parse(localStorage.getItem(roomId)).userId));
-    console.log(`userId: ${currentPlayerUserId}`);
+    currentPlayerData.current = JSON.parse(localStorage.getItem(roomId));
+    console.log(`userId: ${currentPlayerData.current?.userId}`);
     const roomDataInStorage = JSON.parse(localStorage.getItem(roomId));
     const newPlayerData = {
       roomId: roomId,
       userName: localStorage.getItem("userName"),
-      userId: roomDataInStorage.userId,
+      ...currentPlayerData.current
     };
     socket.emit("joinRoom", newPlayerData);
 
@@ -256,9 +256,21 @@ export default function GameArena({ socket }) {
         const seatNumber = playerData.seatNumber;
         playerDataCopy[seatNumber] = newPlayerData;
         // set currentPlayerSeat
-        console.log(`Current player userId: ${currentPlayerUserId}`);
-        if (playerData.userId == currentPlayerUserId) {
+        console.log(`Current player userId: ${currentPlayerData.current?.userId}`);
+        if (playerData.userId == currentPlayerData.current?.userId) {
           setCurrentPlayerSeat((prevSeat) => seatNumber);
+          let currentLocalStorageData = JSON.parse(localStorage.getItem(roomId));
+          let newLocalStorageData = {
+            userId: currentLocalStorageData.userId,
+            numberOfWins: playerData.numberOfWins,
+            totalAmount: playerData.totalAmount,
+            balance: playerData.balance
+          }
+          localStorage.setItem(
+            roomId,
+            JSON.stringify(newLocalStorageData)
+          );
+          currentPlayerData.current = newLocalStorageData;
           console.log(`CurrentPlayer Seat: ${seatNumber}`);
         }
       });
@@ -302,8 +314,8 @@ export default function GameArena({ socket }) {
       socket.emit("startGame", roomId);
     }
     const addMoney = () => {
-      socket.emit("addMoney", roomId, currentPlayerUserId);
-      console.log(`Add money called for ${currentPlayerUserId}`);
+      socket.emit("addMoney", roomId, currentPlayerData.current?.userId);
+      console.log(`Add money called for ${currentPlayerData.current?.userId}`);
     }
     const drawerList = (
       <Stack

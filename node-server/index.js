@@ -480,30 +480,6 @@ class GameInstance {
 
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
-  socket.on("disconnecting", () => {
-    console.log(`🔥: ${socket.id} A user disconnecting`);
-    console.log(socket.rooms);
-  });
-  socket.on("removePlayer", (req) => {
-    const { roomId, userId } = req;
-    Array.from(socket.rooms)
-      .filter((roomId) => roomId != socket.id)
-      .forEach(async (roomId) => {
-        await removePlayer(userId, roomId);
-        const newGameData = await getRoomData(roomId);
-        console.log(`Removing player: ${userId} from roomId: ${roomId}`);
-        socketIO
-          .to(roomId)
-          .emit("updateGameData", { success: true, data: newGameData });
-      });
-  });
-
-  socket.on("newMessage", (newMessage) => {
-    socket.broadcast.emit("newMessage", newMessage);
-    console.log(`new message recieved: ${newMessage}`);
-    console.log(newMessage);
-  });
-
   const handleJoinRoom = async (newUserData) => {
     console.log("Join room called");
     const response = { success: true };
@@ -546,6 +522,30 @@ socketIO.on("connection", (socket) => {
   const handleAddMoney = async (roomId, userId) => {
     gameInstances[roomId].addMoney(userId);
   }
+  const handleRemovePlayer = (req) => {
+    const { roomId, userId } = req;
+    Array.from(socket.rooms)
+      .filter((roomId) => roomId != socket.id)
+      .forEach(async (roomId) => {
+        await removePlayer(userId, roomId);
+        const newGameData = await getRoomData(roomId);
+        console.log(`Removing player: ${userId} from roomId: ${roomId}`);
+        socketIO
+          .to(roomId)
+          .emit("updateGameData", { success: true, data: newGameData });
+      });
+  };
+  const handleNewMessage = (newMessage) => {
+    socket.broadcast.emit("newMessage", newMessage);
+    console.log(`new message recieved: ${newMessage}`);
+    console.log(newMessage);
+  };
+  socket.on("disconnecting", () => {
+    console.log(`🔥: ${socket.id} A user disconnecting`);
+    console.log(socket.rooms);
+  });
+  socket.on("removePlayer", handleRemovePlayer);
+  socket.on("newMessage", handleNewMessage);
   socket.on("startGame", onStartGame);
   socket.on("pauseGame", onPauseGame);
   socket.on("playerAction", onPlayerAction);
@@ -643,9 +643,11 @@ async function addNewPlayer(newPlayerData, roomId) {
         console.log(`Error while getting EntryAmount!`);
         return false;
       }
+      console.log(`AddNewPlayer: ${newPlayerData}`)
+      console.log(newPlayerData);
       newPlayerData.seatNumber = seatNumber;
-      newPlayerData.balance = entryAmount;
-      newPlayerData.totalAmount = entryAmount;
+      newPlayerData.balance = newPlayerData.balance ?? entryAmount;
+      newPlayerData.totalAmount = newPlayerData.totalAmount ?? entryAmount;
       const newPlayer = await PlayerDataModel.create(newPlayerData);
       await GameModel.findByIdAndUpdate(
         roomId, // ID of the document to update
