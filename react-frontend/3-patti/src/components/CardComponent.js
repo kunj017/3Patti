@@ -33,7 +33,7 @@ export default function CardComponent({ rank, suit }) {
   return (
     <div
       style={{
-        fontSize: 120,
+        fontSize: 110,
         color: suit == "heart" || suit == "diamond" ? "red" : "black",
       }}
     >

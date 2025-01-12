@@ -69,6 +69,7 @@ export default function SeatComponent({
               variant="h6"
               sx={{
                 width: "fit-content",
+                height: "fit-content",
                 borderRadius: 1,
                 border: 1,
                 paddingX: 1,

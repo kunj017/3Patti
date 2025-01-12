@@ -38,7 +38,7 @@ export default function GameArena({ socket }) {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const playerBoxHeight = "90%";
-  const playerBoxWidth = "20%";
+  const playerBoxWidth = "25%";
   const playerBoxCenterWidth = "20%";
   const navBarColor = red[500];
   const numberOfPlayers = 8;
@@ -123,14 +123,12 @@ export default function GameArena({ socket }) {
       </Modal>
     );
   };
-
+  // Manages chat and its drawer state as well as chat badge.
   useEffect(() => {
     if (showChat || chatDrawerState) {
       setUnreadMessages((prevCount) => (0));
       console.log(`Messages set to 0.`)
     }
-  }, [showChat, chatDrawerState])
-  useEffect(() => {
     const onNewMessage = (newMessage) => {
       if (!chatDrawerState && !showChat) {
         setUnreadMessages((prevCount) => (prevCount + 1));
@@ -300,6 +298,24 @@ export default function GameArena({ socket }) {
     };
   }, [userName]);
 
+  // alert for portrait mode setup.
+  // useEffect(() => {
+  //   const handleOrientationChange = () => {
+  //     if (window.screen.orientation.type === 'portrait-primary') {
+  //       // Show a message suggesting landscape mode
+  //       alert('For the best experience, please rotate your device.');
+  //     }
+  //   };
+
+  //   // Listen for orientation changes
+  //   window.screen.orientation.addEventListener('change', handleOrientationChange);
+
+  //   // Clean up the event listener
+  //   return () => {
+  //     window.screen.orientation.removeEventListener('change', handleOrientationChange);
+  //   };
+  // }, []);
+
   const onResetTimer = () => {
     socket.emit("resetTimer", roomId);
   };
@@ -386,23 +402,14 @@ export default function GameArena({ socket }) {
   }
   return (
     <>
-      <Stack
-        direction="column"
-        sx={{
-          height: "100vh",
-          width: "100vw",
-          position: "fixed",
-          left: 0,
-          top: 0,
-        }}
-      >
-        <AppBar position="static" sx={{ backgroundColor: navBarColor }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', maxHeight: "100vh", width: "100vw" }}>
+        <AppBar id="appbar" position="static" sx={{ backgroundColor: navBarColor }}>
           <Toolbar>
             <IconButton
               size="large"
               edge="start"
               aria-label="menu"
-              sx={{ backgroundColor: "white" }}
+              sx={{ backgroundColor: "white", maxHeight: "10vh" }}
               onClick={() => {
                 console.log("drawer set");
                 setDrawerState(true);
@@ -445,164 +452,174 @@ export default function GameArena({ socket }) {
             )}
           </Toolbar>
         </AppBar>
-
-        <Stack
-          direction="row"
-          sx={{
-            height: "100%",
-            width: "100%",
+        <div
+          style={{
+            flexGrow: 1,
+            maxHeight: "100%",
+            display: "flex",
+            flexDirection: "column",
             overflow: "auto"
           }}
         >
-          <div style={{ flexGrow: 1, position: "relative" }}>
-            <Stack
-              direction="column"
-              sx={{ justifyContent: "space-between", height: "100%" }}
-            >
+          <Stack
+            direction="row"
+            sx={{
+              flexGrow: 1,
+              height: "100%",
+              width: "100%",
+              overflow: "auto",
+            }}
+          >
+            <div style={{ flexGrow: 1 }}>
               <Stack
-                direction="row"
-                sx={{ justifyContent: "space-around", paddingX: 12, mt: 2 }}
-              >
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[0]}
-                </Box>
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[1]}
-                </Box>
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[2]}
-                </Box>
-              </Stack>
-              <Stack
-                direction="row"
-                sx={{
-                  justifyContent: "space-between",
-                  paddingX: 1,
-                }}
-              >
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxCenterWidth,
-                  }}
-                >
-                  {players[7]}
-                </Box>
-                <Card
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    height: playerBoxHeight,
-                    width: playerBoxCenterWidth,
-                    border: 1,
-                  }}
-                >
-                  <Typography
-                    variant="h4"
-                    sx={{ textAlign: "center", fontWeight: 'bold' }}
-                  >{`POT: ${gameData.potAmount}`}</Typography>
-                </Card>
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxCenterWidth,
-                  }}
-                >
-                  {players[3]}
-                </Box>
-              </Stack>
-              <Stack
-                direction="row"
-                sx={{ justifyContent: "space-around", paddingX: 12 }}
-              >
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[6]}
-                </Box>
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[5]}
-                </Box>
-                <Box
-                  sx={{
-                    height: playerBoxHeight,
-                    width: playerBoxWidth,
-                  }}
-                >
-                  {players[4]}
-                </Box>
-              </Stack>
-              {/* Controller */}
-              <Stack
-                direction="row"
-                spacing={2}
-                sx={{
-                  justifyContent: "space-between",
-                  paddingX: 2,
-                  alignItems: "center",
-                }}
+                direction="column"
+                sx={{ justifyContent: "space-between", height: "100%", overflow: "auto" }}
               >
                 <Stack
                   direction="row"
+                  sx={{ justifyContent: "space-around", paddingX: 12, mt: 2 }}
+                >
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[0]}
+                  </Box>
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[1]}
+                  </Box>
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[2]}
+                  </Box>
+                </Stack>
+                <Stack
+                  direction="row"
                   sx={{
-                    justifyContent: "center",
+                    justifyContent: "space-between",
+                    paddingX: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxCenterWidth,
+                    }}
+                  >
+                    {players[7]}
+                  </Box>
+                  <Card
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      height: playerBoxHeight,
+                      width: playerBoxCenterWidth,
+                      border: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="h4"
+                      sx={{ textAlign: "center", fontWeight: 'bold' }}
+                    >{`POT: ${gameData.potAmount}`}</Typography>
+                  </Card>
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxCenterWidth,
+                    }}
+                  >
+                    {players[3]}
+                  </Box>
+                </Stack>
+                <Stack
+                  direction="row"
+                  sx={{ justifyContent: "space-around", paddingX: 12 }}
+                >
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[6]}
+                  </Box>
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[5]}
+                  </Box>
+                  <Box
+                    sx={{
+                      height: playerBoxHeight,
+                      width: playerBoxWidth,
+                    }}
+                  >
+                    {players[4]}
+                  </Box>
+                </Stack>
+                {/* Controller */}
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  sx={{
+                    justifyContent: "space-between",
                     paddingX: 2,
                     alignItems: "center",
                   }}
                 >
-                  <Typography variant="h6">Cards: </Typography>
-                  {cards.map((card) => card)}
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: "center",
+                      paddingX: 2,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography variant="h6">Cards: </Typography>
+                    {cards.map((card) => card)}
+                  </Stack>
+                  <ControllerComponent
+                    socket={socket}
+                    roomId={roomId}
+                    playerBalance={playerData[currentPlayerSeat].balance}
+                    canShow={playerData.filter(it => it.state === 'active').length < 2}
+                    isActive={playerData[currentPlayerSeat].state === "current"}
+                    currentBet={minBet}
+                    bootAmount={gameData.bootAmount}
+                    maxBet={gameData.maxBet}
+                    timer={timer}
+                  ></ControllerComponent>
                 </Stack>
-                <ControllerComponent
-                  socket={socket}
-                  roomId={roomId}
-                  playerBalance={playerData[currentPlayerSeat].balance}
-                  canShow={playerData.filter(it => it.state === 'active').length < 2}
-                  isActive={playerData[currentPlayerSeat].state === "current"}
-                  currentBet={minBet}
-                  bootAmount={gameData.bootAmount}
-                  maxBet={gameData.maxBet}
-                  timer={timer}
-                ></ControllerComponent>
               </Stack>
-            </Stack>
-          </div>
-          <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
-            <div style={{ height: "100%" }}>
-              <SharedChatComponent
-                socket={socket}
-                chatList={chatList}
-                setChatList={setChatList}
-                currentUserName={userName}
-              ></SharedChatComponent>
             </div>
-          </div>
-        </Stack>
-      </Stack >
+            <div style={{ width: "25%", display: showChat ? "block" : "none" }}>
+              <div style={{ height: "100%" }}>
+                <SharedChatComponent
+                  socket={socket}
+                  chatList={chatList}
+                  setChatList={setChatList}
+                  currentUserName={userName}
+                ></SharedChatComponent>
+              </div>
+            </div>
+          </Stack>
+        </div >
+      </div>
       {appDrawer()}
       {chatAppDrawer()}
       {setUserNameModal()}
