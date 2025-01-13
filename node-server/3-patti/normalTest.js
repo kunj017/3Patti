@@ -20,8 +20,8 @@ const SUITS = ["diamond", "heart", "club", "spade"];
 //   console.log(compareHands(cards1, cards2));
 // }
 
-hand1 = [{ value: 7, suit: "diamond" }, { value: 7, suit: "diamond" }, { value: 7, suit: "heart" }];
-hand2 = [{ value: 5, suit: "spade" }, { value: 13, suit: "heart" }, { value: 9, suit: "diamond" }];
+hand1 = [{ value: 13, suit: "spade" }, { value: 12, suit: "club" }, { value: 11, suit: "club" }];
+hand2 = [{ value: 6, suit: "spade" }, { value: 6, suit: "diamond" }, { value: 12, suit: "heart" }];
 console.log(compareHands(hand1, hand2));
 
 // [

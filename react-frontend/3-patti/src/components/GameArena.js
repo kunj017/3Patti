@@ -60,7 +60,6 @@ export default function GameArena({ socket }) {
     bootAmount: 0,
     maxBet: 0,
     gameType: "",
-    activePlayer: null,
   });
   const [playerData, setPlayerData] = React.useState(() => {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
@@ -86,11 +85,8 @@ export default function GameArena({ socket }) {
       seatNumber={i}
       isOccupied={playerData[i].isOccupied}
       state={playerData[i].state}
-      onRemovePlayer={(seatNumber) => {
-        socket.emit("removePlayer", {
-          roomId: roomId,
-          userId: playerData[i].userId,
-        });
+      onRemovePlayer={() => {
+        socket.emit("removePlayer", roomId, playerData[i].userId);
       }}
     ></SeatComponent>
   ));
@@ -218,7 +214,6 @@ export default function GameArena({ socket }) {
           bootAmount: data.data.bootAmount,
           maxBet: data.data.maxBet,
           gameType: data.data.gameType,
-          activePlayer: data.data.activePlayer,
         };
       });
       console.log("Game data updated: ");
