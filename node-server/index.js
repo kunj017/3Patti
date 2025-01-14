@@ -115,22 +115,25 @@ class GameInstance {
   async init() {
     await this.#fetchGameData();
   }
-  // TODO: Convert all functions to use class members directly.
-  async #setupNewGame() {
-    console.log("Setting up new game!!")
-    this.#removeClock();
-    await this.#fetchGameData()
-    if (this.#playerData.length < 2) {
-      // Do not start game for 1 player.
-      console.log(`Start game called for less than 2 players`);
-      await this.broadcastData();
-      return;
+  async startGame() {
+    try {
+      console.log(`#startGame, current game state: ${this.#state}`)
+      switch (this.#state) {
+        case this.#GAME_STATE.terminated:
+          await this.#setupNewGame();
+          break;
+        case this.#GAME_STATE.paused:
+          await this.#startGameClock();
+          await this.broadcastData();
+          break;
+        case this.#GAME_STATE.active:
+          return;
+        default:
+          console.log(`Invalid game state during startGame`)
+      }
+    } catch (err) {
+      console.log(`Error while startGame: ${err}`)
     }
-    await this.#resetGameData();
-    await this.#startPot();
-    await this.#distributeCards();
-    await this.broadcastData();
-    this.#resetGameClock();
   }
   /**Adds a player into the room. 
    * 
@@ -157,6 +160,89 @@ class GameInstance {
       console.log(`Error while removing a player: ${err}`)
       return false
     }
+  }
+  async onUserEvent(userEvent, userId) {
+    try {
+      if (this.#state != this.#GAME_STATE.active) {
+        console.log("Recieved event when game is not active. Ignoring event");
+        return;
+      }
+      if (userId != this.#currentPlayer.userId) {
+        console.log("Recieved event from another player. Ignoring event");
+        return;
+      }
+      // userEvent = {event:"bet/show/fold", value:""}
+      console.log("Player Action: ");
+      console.log(userEvent);
+      const event = userEvent.event;
+      switch (event) {
+        case "bet":
+          await this.#controllerAction(this.#CONTROLLER_ACTION.bet, { betAmount: userEvent.value });
+          break;
+        case "show":
+          await this.#controllerAction(this.#CONTROLLER_ACTION.show, { showAmount: userEvent.value });
+          break;
+        case "fold":
+          await this.#controllerAction(this.#CONTROLLER_ACTION.fold);
+          break;
+        default:
+          console.log("Unknown user action !!");
+          return;
+      }
+    } catch (err) {
+      console.log(`Error during onUserEvent: ${err}`);
+    }
+  }
+  async pauseGame() {
+    // remove interval
+    clearInterval(this.#interval);
+    await this.#setGameState(this.#GAME_STATE.paused);
+    await this.broadcastData();
+  }
+  async addMoney(userId) {
+    try {
+      await GameModel.updateOne(
+        {
+          _id: this.#roomId,
+          "playerData.userId": userId,
+        },
+        { $inc: { "playerData.$.totalAmount": this.#gameData.entryAmount, "playerData.$.balance": this.#gameData.entryAmount } }
+      );
+      await this.broadcastData();
+    } catch (err) {
+      console.log(`Error while addMoney: ${err}`)
+    }
+  }
+  async broadcastData() {
+    await this.#fetchGameData();
+    console.log("broadcasting game data: ");
+    console.log(this.#gameData);
+    socketIO
+      .to(this.#roomId)
+      .emit("updateGameData", { success: true, data: this.#gameData });
+  }
+  // TODO: Remove this.
+  async resetTimer() {
+    this.#timer = timerLimit;
+  }
+
+  // -----------------------------------Private Functions------------------------------------------
+  // TODO: Convert all functions to use class members directly.
+  async #setupNewGame() {
+    console.log("Setting up new game!!")
+    this.#removeClock();
+    await this.#fetchGameData()
+    if (this.#playerData.length < 2) {
+      // Do not start game for 1 player.
+      console.log(`Start game called for less than 2 players`);
+      await this.broadcastData();
+      return;
+    }
+    await this.#resetGameData();
+    await this.#startPot();
+    await this.#distributeCards();
+    await this.#resetGameClock();
+    await this.broadcastData();
   }
   async #fetchGameData() {
     try {
@@ -311,34 +397,7 @@ class GameInstance {
       console.log(`Error during #distributeCards: ${err}`);
     }
   }
-  async onUserEvent(userEvent, userId) {
-    try {
-      if (userId != this.#currentPlayer.userId) {
-        console.log("Recieved event from another player. Ignoring event");
-        return;
-      }
-      // userEvent = {event:"bet/show/fold", value:""}
-      console.log("Player Action: ");
-      console.log(userEvent);
-      const event = userEvent.event;
-      switch (event) {
-        case "bet":
-          await this.#controllerAction(this.#CONTROLLER_ACTION.bet, { betAmount: userEvent.value });
-          break;
-        case "show":
-          await this.#controllerAction(this.#CONTROLLER_ACTION.show, { showAmount: userEvent.value });
-          break;
-        case "fold":
-          await this.#controllerAction(this.#CONTROLLER_ACTION.fold);
-          break;
-        default:
-          console.log("Unknown user action !!");
-          return;
-      }
-    } catch (err) {
-      console.log(`Error during onUserEvent: ${err}`);
-    }
-  }
+
   async #bet(betAmount) {
     try {
       // TODO: Apply checks to verify if bet is allowed.
@@ -511,11 +570,7 @@ class GameInstance {
       console.log(`Error while #fold: ${err}`)
     }
   }
-  pauseGame() {
-    // remove interval
-    clearInterval(this.#interval);
-    this.#state = this.#GAME_STATE.paused;
-  }
+
   #removeClock() {
     console.log("#removeClock")
     if (this.#interval) {
@@ -525,19 +580,16 @@ class GameInstance {
     }
     this.#timer = timerLimit;
   }
-  // TODO: Remove this.
-  async resetTimer() {
-    this.#timer = timerLimit;
-  }
-  #resetGameClock() {
+
+  async #resetGameClock() {
     console.log("#resetGameClock")
     this.#timer = timerLimit;
-    this.#startGameClock();
+    await this.#startGameClock();
   }
-  #startGameClock() {
+  async #startGameClock() {
     console.log("#startGameClock")
     // set game state active.
-    this.#state = this.#GAME_STATE.active;
+    await this.#setGameState(this.#GAME_STATE.active);
     // set interval
     if (this.#interval) {
       clearInterval(this.#interval);
@@ -553,47 +605,21 @@ class GameInstance {
       }
     }, 1000);
   }
-  async startGame() {
-    try {
-      console.log(`#startGame, current game state: ${this.#state}`)
-      switch (this.#state) {
-        case this.#GAME_STATE.terminated:
-          await this.#setupNewGame();
-          break;
-        case this.#GAME_STATE.paused:
-          this.#startGameClock();
-          break;
-        case this.#GAME_STATE.active:
-          return;
-        default:
-          console.log(`Invalid game state during startGame`)
-      }
-    } catch (err) {
-      console.log(`Error while startGame: ${err}`)
-    }
-  }
-  #startNewGame() {
+
+  async #startNewGame() {
     this.#removeClock();
-    this.#state = this.#GAME_STATE.terminated;
+    await this.#setGameState(this.#GAME_STATE.terminated);
     setTimeout(async () => {
       console.log("creating new game");
       await this.startGame();
     }, this.#WAIT_TIME_FOR_NEW_GAME_IN_SECONDS * 1000);
   }
-  async addMoney(userId) {
-    try {
-      await GameModel.updateOne(
-        {
-          _id: this.#roomId,
-          "playerData.userId": userId,
-        },
-        { $inc: { "playerData.$.totalAmount": this.#gameData.entryAmount, "playerData.$.balance": this.#gameData.entryAmount } }
-      );
-      await this.broadcastData();
-    } catch (err) {
-      console.log(`Error while addMoney: ${err}`)
-    }
+
+  async #setGameState(newState) {
+    this.#state = newState;
+    await GameModel.updateOne({ _id: this.#roomId }, { $set: { "state": newState } })
   }
+
   async #declareWinner() {
     try {
       await this.#fetchGameData();
@@ -630,14 +656,6 @@ class GameInstance {
     }
   }
 
-  async broadcastData() {
-    await this.#fetchGameData();
-    console.log("broadcasting game data: ");
-    console.log(this.#gameData);
-    socketIO
-      .to(this.#roomId)
-      .emit("updateGameData", { success: true, data: this.#gameData });
-  }
 }
 
 socketIO.on("connection", (socket) => {
@@ -678,7 +696,7 @@ socketIO.on("connection", (socket) => {
     await gameInstances[req.roomId].onUserEvent(req.action, socket.userId);
   };
   const onPauseGame = async (roomId) => {
-    gameInstances[roomId].pauseGame();
+    await gameInstances[roomId].pauseGame();
   };
   const onResetTimer = async (roomId) => {
     gameInstances[roomId].resetTimer();

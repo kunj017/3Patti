@@ -88,6 +88,12 @@ const GameSchema = new mongoose.Schema({
   playerData: {
     type: [PlayerDataSchema],
   },
+  state: {
+    type: String,
+    // active: Game is in play, paused: Game is paused, terminated: Game never started or is going to start a new game.
+    enum: ["terminated", "active", "paused"],
+    default: "terminated",
+  }
 });
 
 // hey theere

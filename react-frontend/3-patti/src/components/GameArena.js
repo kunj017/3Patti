@@ -60,6 +60,7 @@ export default function GameArena({ socket }) {
     bootAmount: 0,
     maxBet: 0,
     gameType: "",
+    state: "",
   });
   const [playerData, setPlayerData] = React.useState(() => {
     return Array.from({ length: numberOfPlayers }, (_, i) => ({
@@ -214,6 +215,7 @@ export default function GameArena({ socket }) {
           bootAmount: data.data.bootAmount,
           maxBet: data.data.maxBet,
           gameType: data.data.gameType,
+          state: data.data.state
         };
       });
       console.log("Game data updated: ");
@@ -528,6 +530,10 @@ export default function GameArena({ socket }) {
                       variant="h4"
                       sx={{ textAlign: "center", fontWeight: 'bold' }}
                     >{`POT: ${gameData.potAmount}`}</Typography>
+                    {gameData.state == "paused" && <Typography
+                      variant="h6"
+                      sx={{ textAlign: "center" }}
+                    >{`Game is paused!!`}</Typography>}
                   </Card>
                   <Box
                     sx={{
@@ -593,7 +599,7 @@ export default function GameArena({ socket }) {
                     roomId={roomId}
                     playerBalance={playerData[currentPlayerSeat].balance}
                     canShow={playerData.filter(it => it.state === 'active').length < 2}
-                    isActive={playerData[currentPlayerSeat].state === "current"}
+                    isActive={playerData[currentPlayerSeat].state === "current" && gameData.state === "active"}
                     currentBet={minBet}
                     bootAmount={gameData.bootAmount}
                     maxBet={gameData.maxBet}

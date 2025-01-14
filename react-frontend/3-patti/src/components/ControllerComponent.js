@@ -92,7 +92,7 @@ export default function ControllerComponent({
           onClick={() => {
             onPlayerAction("show");
           }}
-          disabled={!isActive}
+          disabled={!isActive || playerBalance < currentBet}
         >
           {canShow ? "Show" : "Side Show"}{` : ${currentBet}`}
         </Button>
