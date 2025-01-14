@@ -582,28 +582,36 @@ class GameInstance {
   }
 
   async #resetGameClock() {
-    console.log("#resetGameClock")
-    this.#timer = timerLimit;
-    await this.#startGameClock();
+    try {
+      console.log("#resetGameClock")
+      this.#timer = timerLimit;
+      await this.#startGameClock();
+    } catch (err) {
+      console.log(`Error during #resetGameClock: ${err}`);
+    }
   }
   async #startGameClock() {
-    console.log("#startGameClock")
-    // set game state active.
-    await this.#setGameState(this.#GAME_STATE.active);
-    // set interval
-    if (this.#interval) {
-      clearInterval(this.#interval);
-    }
-    this.#interval = setInterval(async () => {
-      if (this.#timer > 0) {
-        this.#timer--;
-        socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
-      } else {
-        console.log(`Timer ended for room: ${this.#roomId}`);
-        await this.#controllerAction(this.#CONTROLLER_ACTION.timerEnd);
-        this.#timer = timerLimit;
+    try {
+      console.log("#startGameClock")
+      // set game state active.
+      await this.#setGameState(this.#GAME_STATE.active);
+      // set interval
+      if (this.#interval) {
+        clearInterval(this.#interval);
       }
-    }, 1000);
+      this.#interval = setInterval(async () => {
+        if (this.#timer > 0) {
+          this.#timer--;
+          socketIO.to(this.#roomId).emit("timeUpdate", this.#timer); // Send the timer only to clients in the room
+        } else {
+          console.log(`Timer ended for room: ${this.#roomId}`);
+          await this.#controllerAction(this.#CONTROLLER_ACTION.timerEnd);
+          this.#timer = timerLimit;
+        }
+      }, 1000);
+    } catch (err) {
+      console.log(`Error during #startGameClock: ${err}`);
+    }
   }
 
   async #startNewGame() {
@@ -616,8 +624,12 @@ class GameInstance {
   }
 
   async #setGameState(newState) {
-    this.#state = newState;
-    await GameModel.updateOne({ _id: this.#roomId }, { $set: { "state": newState } })
+    try {
+      this.#state = newState;
+      await GameModel.updateOne({ _id: this.#roomId }, { $set: { "state": newState } })
+    } catch (err) {
+      console.log(`Error during #setGameState: ${err}`);
+    }
   }
 
   async #declareWinner() {
