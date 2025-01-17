@@ -492,7 +492,6 @@ class GameInstance {
     } catch (err) {
       console.log(`Error during #updateCurrentPlayer: ${err}`);
     }
-
   }
   async #show(showAmount) {
     try {
@@ -612,9 +611,9 @@ class GameInstance {
 
   async #startNewGame() {
     this.#removeClock();
-    await this.#setGameState(this.#GAME_STATE.terminated);
     setTimeout(async () => {
       console.log("creating new game");
+      await this.#setGameState(this.#GAME_STATE.terminated);
       await this.startGame();
     }, this.#WAIT_TIME_FOR_NEW_GAME_IN_SECONDS * 1000);
   }
