@@ -312,11 +312,6 @@ export default function GameArena({ socket }) {
   //     window.screen.orientation.removeEventListener('change', handleOrientationChange);
   //   };
   // }, []);
-
-  const onResetTimer = () => {
-    socket.emit("resetTimer", roomId);
-  };
-
   function appDrawer() {
     function pauseGame() {
       socket.emit("pauseGame", roomId);
@@ -354,15 +349,6 @@ export default function GameArena({ socket }) {
           <AccountBalanceIcon sx={{ mr: 1 }}></AccountBalanceIcon>
           Add Money
         </IconButton>
-
-        <Button
-          variant="contained"
-          onClick={() => {
-            onResetTimer();
-          }}
-        >
-          Reset Timer
-        </Button>
       </Stack>
     );
     return (

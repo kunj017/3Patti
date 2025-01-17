@@ -221,10 +221,6 @@ class GameInstance {
       .to(this.#roomId)
       .emit("updateGameData", { success: true, data: this.#gameData });
   }
-  // TODO: Remove this.
-  async resetTimer() {
-    this.#timer = timerLimit;
-  }
 
   // -----------------------------------Private Functions------------------------------------------
   // TODO: Convert all functions to use class members directly.
@@ -491,7 +487,7 @@ class GameInstance {
         },
         { $set: { "playerData.$.state": "current" } }
       );
-      this.resetTimer();
+      this.#resetTimer();
       await this.broadcastData();
     } catch (err) {
       console.log(`Error during #updateCurrentPlayer: ${err}`);
@@ -667,6 +663,9 @@ class GameInstance {
       console.log(`Error while #declareWinner: ${err}`)
     }
   }
+  async #resetTimer() {
+    this.#timer = timerLimit;
+  }
 
 }
 
@@ -710,9 +709,6 @@ socketIO.on("connection", (socket) => {
   const onPauseGame = async (roomId) => {
     await gameInstances[roomId].pauseGame();
   };
-  const onResetTimer = async (roomId) => {
-    gameInstances[roomId].resetTimer();
-  };
   const handleAddMoney = async (roomId, userId) => {
     gameInstances[roomId].addMoney(userId);
   }
@@ -739,7 +735,6 @@ socketIO.on("connection", (socket) => {
   socket.on("newMessage", handleNewMessage);
   socket.on("pauseGame", onPauseGame);
   socket.on("playerAction", onPlayerAction);
-  socket.on("resetTimer", onResetTimer);
   socket.on("addMoney", handleAddMoney);
 });
 
